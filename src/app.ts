@@ -6,11 +6,25 @@ import { notFound } from "./middleware/notFound.js";
 import cookieParser from "cookie-parser";
 import router from "./routes/index.js";
 import { config } from "./config/config.js";
+import helmet from "helmet";
+import cors from "cors";
+import xss from "xss";
 
 const app = express();
 
 // port
 const port = config.server.port;
+
+// security
+app.use(helmet());
+app.use(
+	cors({
+		origin: "http://localhost:3000",
+		methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+		allowedHeaders: ["Content-Type", "Authorization"],
+		credentials: true,
+	})
+);
 
 // middlewares
 app.use(express.urlencoded({ extended: true }));
