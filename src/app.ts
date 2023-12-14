@@ -7,11 +7,6 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import path from "path";
 import router from "./routes/index.js";
-
-// Setting up path
-const absolutePath = path.join(__dirname, "../.env");
-dotenv.config({ path: absolutePath });
-
 import { config } from "./config/config.js";
 
 const app = express();

@@ -1,9 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.config = void 0;
-// Setting up path
-// const absolutePath = path.resolve(__dirname, "../../.env");
-// dotenv.config({ path: absolutePath });
+const path_1 = __importDefault(require("path"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const absolutePath = path_1.default.join(__dirname, "../../.env");
+dotenv_1.default.config({ path: absolutePath });
 const MONGO_URL = process.env.MONGO_URL || ``;
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET;

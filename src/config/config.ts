@@ -1,8 +1,8 @@
 import path from "path";
+import dotenv from "dotenv";
 
-// Setting up path
-// const absolutePath = path.resolve(__dirname, "../../.env");
-// dotenv.config({ path: absolutePath });
+const absolutePath = path.join(__dirname, "../../.env");
+dotenv.config({ path: absolutePath });
 
 const MONGO_URL = process.env.MONGO_URL || ``;
 

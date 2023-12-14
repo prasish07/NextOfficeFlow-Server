@@ -9,12 +9,7 @@ const DbConnect_js_1 = require("./db/DbConnect.js");
 const errorHandler_js_1 = require("./middleware/errorHandler.js");
 const notFound_js_1 = require("./middleware/notFound.js");
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const path_1 = __importDefault(require("path"));
 const index_js_1 = __importDefault(require("./routes/index.js"));
-// Setting up path
-const absolutePath = path_1.default.join(__dirname, "../.env");
-dotenv_1.default.config({ path: absolutePath });
 const config_js_1 = require("./config/config.js");
 const app = (0, express_1.default)();
 // port
