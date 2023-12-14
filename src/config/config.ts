@@ -10,6 +10,9 @@ const PORT = process.env.PORT || 5000;
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_LIFETIME = process.env.JWT_LIFETIME;
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const GOOGLE_REDIRECT = process.env.GOOGLE_REDIRECT;
 
 export const config = {
 	mongo: {
@@ -21,5 +24,10 @@ export const config = {
 	jwt: {
 		secret: JWT_SECRET,
 		lifetime: JWT_LIFETIME,
+	},
+	google: {
+		clientId: CLIENT_ID,
+		clientSecret: CLIENT_SECRET,
+		redirect: GOOGLE_REDIRECT,
 	},
 };

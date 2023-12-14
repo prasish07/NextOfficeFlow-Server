@@ -4,6 +4,14 @@ import { Request, Response } from "express";
 import customAPIErrors from "../errors/customError";
 import { attachCookiesToResponse, comparePassword } from "../utils/auth.helper";
 import { hashPassword } from "../utils/auth.helper";
+import { google } from "googleapis";
+import { config } from "../config/config";
+
+const oauth2Client = new google.auth.OAuth2(
+	config.google.clientId,
+	config.google.clientSecret,
+	config.google.redirect
+);
 
 export const login = async (req: Request, res: Response) => {
 	const { email, password } = req.body;
@@ -61,4 +69,51 @@ export const register = async (req: Request, res: Response) => {
 	const user = await User.create({ email, password: EncryptedPassword, role });
 
 	res.status(StatusCodes.CREATED).json({ msg: "User created" });
+};
+
+export const googleOauthHandler = async (req: Request, res: Response) => {
+	const code = req.query.code as string;
+	try {
+		const { tokens } = await oauth2Client.getToken(code);
+		oauth2Client.setCredentials(tokens);
+
+		const userInfo = await google
+			.people({ version: "v1", auth: oauth2Client })
+			.people.get({
+				resourceName: "people/me",
+				personFields: "names,emailAddresses",
+			});
+
+		const googleUser = userInfo?.data;
+
+		if (
+			!googleUser ||
+			!googleUser.emailAddresses ||
+			!googleUser.emailAddresses[0]?.metadata?.verified
+		) {
+			res.status(402).json({ msg: "Unauthorized" });
+			return;
+		}
+
+		const email = googleUser.emailAddresses[0].value;
+
+		const user = await User.findOne({ email });
+
+		if (!user) {
+			throw new customAPIErrors(
+				"No account with this email, Please contact the support",
+				StatusCodes.UNAUTHORIZED
+			);
+		}
+
+		const tokenPayload = { userId: user._id, role: user.role };
+
+		attachCookiesToResponse(res, tokenPayload);
+
+		// res.redirect("https://github.com/");
+		res.send("google login");
+	} catch (err) {
+		console.error("Error retrieving tokens:", err);
+		res.status(500).send("Error retrieving tokens");
+	}
 };

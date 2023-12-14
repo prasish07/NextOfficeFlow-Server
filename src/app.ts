@@ -4,8 +4,6 @@ import { DbConnect } from "./db/DbConnect.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
-import path from "path";
 import router from "./routes/index.js";
 import { config } from "./config/config.js";
 
