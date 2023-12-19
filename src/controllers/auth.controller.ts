@@ -6,6 +6,7 @@ import { attachCookiesToResponse, comparePassword } from "../utils/auth.helper";
 import { hashPassword } from "../utils/auth.helper";
 import { google } from "googleapis";
 import { config } from "../config/config";
+import { CustomerRequestInterface } from "../middleware/auth.middleware";
 
 const oauth2Client = new google.auth.OAuth2(
 	config.google.clientId,
@@ -38,12 +39,12 @@ export const login = async (req: Request, res: Response) => {
 
 	attachCookiesToResponse(res, tokenPayload);
 
-	res.status(StatusCodes.OK).json({ msg: "Login successful" });
+	res.status(StatusCodes.OK).json({ message: "Login successful" });
 };
 
 export const logout = async (req: Request, res: Response) => {
 	res.clearCookie("token");
-	res.status(StatusCodes.OK).json({ msg: "Logout successful" });
+	res.status(StatusCodes.OK).json({ message: "Logout successful" });
 };
 
 export const register = async (req: Request, res: Response) => {
@@ -110,10 +111,15 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
 
 		attachCookiesToResponse(res, tokenPayload);
 
-		// res.redirect("https://github.com/");
-		res.send("google login");
+		res.redirect("http://localhost:3000");
+		// res.send("google login");
 	} catch (err) {
 		console.error("Error retrieving tokens:", err);
 		res.status(500).send("Error retrieving tokens");
 	}
+};
+
+export const getUserInfo = (req: Request, res: Response) => {
+	const user = (req as CustomerRequestInterface).user;
+	res.status(StatusCodes.OK).json({ user });
 };
