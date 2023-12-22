@@ -32,7 +32,7 @@ export const validateToken = async (
 		const payload = verifyToken(token) as userProps;
 
 		(req as CustomerRequestInterface).user = payload;
-
+		console.log("hello");
 		next();
 	} catch (error) {
 		console.log(error);
@@ -54,6 +54,4 @@ export const authorizePermission = (...role: string[]) => {
 	};
 };
 
-export const lockUser = ()=>{
-	
-}
+export const lockUser = () => {};

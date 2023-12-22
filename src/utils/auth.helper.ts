@@ -38,9 +38,10 @@ export const attachCookiesToResponse = (
 	const options = {
 		expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
 		httpOnly: true,
-		secure: process.env.NODE_ENV === "production",
+		secure: true,
 		signed: true,
 	};
+	console.log("token", token);
 	res.cookie("token", token, options);
 };
 

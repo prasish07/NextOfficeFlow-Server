@@ -2,11 +2,35 @@ import User from "../modals/user";
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
 import customAPIErrors from "../errors/customError";
-import { attachCookiesToResponse, comparePassword } from "../utils/auth.helper";
-import { hashPassword } from "../utils/auth.helper";
+// import { attachCookiesToResponse, comparePassword } from "../utils/auth.helper";
+import {
+	attachCookiesToResponse,
+	comparePassword,
+	createToken,
+	hashPassword,
+} from "../utils/auth.helper";
 import { google } from "googleapis";
 import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
+import { jwtDecode } from "jwt-decode";
+
+type GoogleUserInfo = {
+	iss: string;
+	azp: string;
+	aud: string;
+	sub: string;
+	email: string;
+	email_verified: boolean;
+	nbf: number;
+	name: string;
+	picture: string;
+	given_name: string;
+	family_name: string;
+	locale: string;
+	iat: number;
+	exp: number;
+	jti: string;
+};
 
 const oauth2Client = new google.auth.OAuth2(
 	config.google.clientId,
@@ -36,10 +60,13 @@ export const login = async (req: Request, res: Response) => {
 	}
 
 	const tokenPayload = { userId: user._id, role: user.role };
+	const token = createToken(tokenPayload);
 
 	attachCookiesToResponse(res, tokenPayload);
 
-	res.status(StatusCodes.OK).json({ message: "Login successful" });
+	res
+		.status(StatusCodes.OK)
+		.json({ message: "Login successful", userId: user._id, role: user.role });
 };
 
 export const logout = async (req: Request, res: Response) => {
@@ -73,30 +100,50 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const googleOauthHandler = async (req: Request, res: Response) => {
-	const code = req.query.code as string;
+	// const code = req.query.code as string;
 	try {
-		const { tokens } = await oauth2Client.getToken(code);
-		oauth2Client.setCredentials(tokens);
+		// const { tokens } = await oauth2Client.getToken(code);
+		// oauth2Client.setCredentials(tokens);
+		const data = req.body;
+		const code = data.tokens;
 
-		const userInfo = await google
-			.people({ version: "v1", auth: oauth2Client })
-			.people.get({
-				resourceName: "people/me",
-				personFields: "names,emailAddresses",
-			});
+		const decode = jwtDecode(code) as GoogleUserInfo;
 
-		const googleUser = userInfo?.data;
+		console.log(decode.email_verified);
 
-		if (
-			!googleUser ||
-			!googleUser.emailAddresses ||
-			!googleUser.emailAddresses[0]?.metadata?.verified
-		) {
-			res.status(402).json({ msg: "Unauthorized" });
-			return;
-		}
+		// const ticket = await oauth2Client.verifyIdToken({
+		// 	idToken: code,
+		// 	audience: config.google.clientId,
+		// });
 
-		const email = googleUser.emailAddresses[0].value;
+		// console.log(ticket);
+
+		// console.log(data);
+		// oauth2Client.setCredentials(data.tokens);
+
+		// const userInfo = await google
+		// 	.people({ version: "v1", auth: oauth2Client })
+		// 	.people.get({
+		// 		resourceName: "people/me",
+		// 		personFields: "names,emailAddresses",
+		// 	});
+
+		// const googleUser = userInfo?.data;
+
+		// if (
+		// 	// !googleUser ||
+		// 	// !googleUser.emailAddresses ||
+		// 	// !googleUser.emailAddresses[0]?.metadata?.verified
+		// 	// decode &&
+		// 	!!decode.email_verified
+		// ) {
+		// 	res.status(402).json({ msg: "Unauthorized" });
+		// 	return;
+		// }
+
+		const email = decode.email;
+
+		// const email = googleUser.emailAddresses[0].value;
 
 		const user = await User.findOne({ email });
 
@@ -111,11 +158,13 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
 
 		attachCookiesToResponse(res, tokenPayload);
 
-		res.redirect("http://localhost:3000");
-		// res.send("google login");
+		// res.redirect("http://localhost:3000");
+		res.json({ ...tokenPayload, message: "Login successful" });
 	} catch (err) {
-		console.error("Error retrieving tokens:", err);
-		res.status(500).send("Error retrieving tokens");
+		if (err instanceof customAPIErrors) {
+			throw new customAPIErrors(err.message, err.statusCode);
+		}
+		res.status(500).json({ message: "Google login fail" });
 	}
 };
 
