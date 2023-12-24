@@ -2,7 +2,6 @@ import User from "../modals/user";
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
 import customAPIErrors from "../errors/customError";
-// import { attachCookiesToResponse, comparePassword } from "../utils/auth.helper";
 import {
 	attachCookiesToResponse,
 	comparePassword,
