@@ -6,6 +6,21 @@ import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
 
+export interface employeeProps {
+	name: string;
+	position: string;
+	department: string;
+	team: string;
+	manager: string;
+	description: string;
+	githubUsername: string;
+	appraisalHistory: string[];
+	salary: number;
+	startDate: Date;
+	endDate: Date;
+	userId: string;
+}
+
 export const createEmployee = async (req: Request, res: Response) => {
 	const {
 		name,
@@ -32,6 +47,29 @@ export const createEmployee = async (req: Request, res: Response) => {
 		);
 	}
 
+	if (
+		!name ||
+		!position ||
+		!department ||
+		!team ||
+		!manager ||
+		!description ||
+		!githubUsername ||
+		!appraisalHistory ||
+		!salary ||
+		!startDate ||
+		!endDate ||
+		!email ||
+		!role
+	) {
+		throw new customAPIErrors(
+			"Please provide all the required fields",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	const password = `${name}@123`;
+
 	// Create if same email exist or not
 	let existingUser = await User.findOne({ where: { email } });
 
@@ -45,6 +83,7 @@ export const createEmployee = async (req: Request, res: Response) => {
 	// Create new Employee with email and role
 	const userEmployee = new User({
 		email,
+		password,
 		role,
 	});
 
@@ -70,6 +109,82 @@ export const createEmployee = async (req: Request, res: Response) => {
 
 	res.status(StatusCodes.CREATED).json({
 		message: "Employee created successfully",
+		data: employee,
+	});
+};
+
+export const updateEmployee = async (req: Request, res: Response) => {
+	const employeeInfo = req.body;
+	const employeeId = req.params.id;
+
+	if (!employeeId) {
+		throw new customAPIErrors("Employee Id not found", StatusCodes.NOT_FOUND);
+	}
+
+	const employeeUpdate = await Employee.findByIdAndUpdate(
+		employeeId,
+		...employeeInfo
+	);
+
+	if (!employeeUpdate) {
+		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
+	}
+
+	res.status(StatusCodes.OK).json({
+		message: "Employee updated successfully",
+		data: employeeUpdate,
+	});
+};
+
+export const deleteEmployee = async (req: Request, res: Response) => {
+	const employeeId = req.params.id;
+
+	if (!employeeId) {
+		throw new customAPIErrors("Employee Id not found", StatusCodes.NOT_FOUND);
+	}
+
+	const employeeDelete = await Employee.findByIdAndDelete(employeeId);
+
+	console.log(employeeDelete);
+
+	if (!employeeDelete) {
+		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
+	}
+
+	res.status(StatusCodes.OK).json({
+		message: "Employee deleted successfully",
+		data: employeeDelete,
+	});
+};
+
+export const getAllEmployees = async (req: Request, res: Response) => {
+	const employees = await Employee.find();
+
+	if (!employees.length) {
+		throw new customAPIErrors("No employees found", StatusCodes.NOT_FOUND);
+	}
+
+	res.status(StatusCodes.OK).json({
+		message: "Employees found",
+		data: employees,
+	});
+};
+
+export const getEmployee = async (req: Request, res: Response) => {
+	const employeeId = req.params.id;
+
+	if (!employeeId) {
+		throw new customAPIErrors("Employee Id not found", StatusCodes.NOT_FOUND);
+	}
+
+	const employee = await Employee.findById(employeeId);
+
+	if (!employee) {
+		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
+	}
+
+	res.status(StatusCodes.OK).json({
+		message: "Employee found",
 		data: employee,
 	});
 };

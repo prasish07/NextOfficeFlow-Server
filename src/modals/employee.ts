@@ -1,4 +1,4 @@
-import mongoose, { Date } from "mongoose";
+import mongoose from "mongoose";
 
 export interface IEmployee extends mongoose.Document {
 	name: string;

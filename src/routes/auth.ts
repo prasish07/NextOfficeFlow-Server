@@ -15,12 +15,7 @@ import {
 const router = Router();
 
 router.post("/user/login", login);
-router.post(
-	"/user/logout",
-	validateToken,
-	authorizePermission("admin"),
-	logout
-);
+router.post("/user/logout", validateToken, logout);
 router.post("/user/register", register);
 
 router.post("/oauth", async (req: Request, res: Response) => {
