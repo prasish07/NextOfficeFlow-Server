@@ -13,17 +13,20 @@ export interface IEmployee extends mongoose.Document {
 	startDate: Date;
 	endDate: Date;
 	UserId: string;
+	from: string;
+	to: string;
+	status: string;
 }
 
 const employeeSchema = new mongoose.Schema({
 	name: { type: String, required: true },
 	position: { type: String, required: true },
 	department: { type: String, required: true },
-	team: { type: String, required: true },
-	manager: { type: String, required: true },
-	description: { type: String, required: true },
-	githubUsername: { type: String, required: true },
-	appraisalHistory: { type: Array, required: true },
+	team: { type: String },
+	manager: { type: String },
+	description: { type: String },
+	githubUsername: { type: String },
+	appraisalHistory: { type: Array },
 	salary: { type: Number, required: true },
 	startDate: { type: Date, required: true },
 	endDate: { type: Date, required: true },
@@ -31,6 +34,9 @@ const employeeSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
+	from: { type: String, required: true },
+	to: { type: String, required: true },
+	status: { type: String, required: true },
 });
 
 const Employee = mongoose.model<IEmployee>("Employee", employeeSchema);

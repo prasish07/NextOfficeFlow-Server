@@ -36,6 +36,9 @@ export const createEmployee = async (req: Request, res: Response) => {
 		endDate,
 		email,
 		role,
+		from,
+		to,
+		status,
 	} = req.body;
 
 	const user = (req as CustomerRequestInterface).user;
@@ -47,31 +50,10 @@ export const createEmployee = async (req: Request, res: Response) => {
 		);
 	}
 
-	if (
-		!name ||
-		!position ||
-		!department ||
-		!team ||
-		!manager ||
-		!description ||
-		!githubUsername ||
-		!appraisalHistory ||
-		!salary ||
-		!startDate ||
-		!endDate ||
-		!email ||
-		!role
-	) {
-		throw new customAPIErrors(
-			"Please provide all the required fields",
-			StatusCodes.BAD_REQUEST
-		);
-	}
-
 	const password = `${name}@123`;
 
 	// Create if same email exist or not
-	let existingUser = await User.findOne({ where: { email } });
+	let existingUser = await User.findOne({ email });
 
 	if (existingUser) {
 		throw new customAPIErrors(
@@ -79,6 +61,24 @@ export const createEmployee = async (req: Request, res: Response) => {
 			StatusCodes.BAD_REQUEST
 		);
 	}
+
+	// Create new Employee
+	const employee = new Employee({
+		name,
+		position,
+		department,
+		team,
+		manager,
+		description,
+		salary,
+		startDate,
+		endDate,
+		from,
+		to,
+		status,
+	});
+
+	await employee.save();
 
 	// Create new Employee with email and role
 	const userEmployee = new User({
@@ -89,27 +89,14 @@ export const createEmployee = async (req: Request, res: Response) => {
 
 	await userEmployee.save();
 
-	// Create new Employee
-	const employee = new Employee({
-		name,
-		position,
-		department,
-		team,
-		manager,
-		description,
-		githubUsername,
-		appraisalHistory,
-		salary,
-		startDate,
-		endDate,
-		userId: userEmployee.id,
-	});
-
-	await employee.save();
+	const updatedEmployee = await Employee.findByIdAndUpdate(
+		employee._id,
+		{ userId: userEmployee._id },
+		{ new: true }
+	);
 
 	res.status(StatusCodes.CREATED).json({
 		message: "Employee created successfully",
-		data: employee,
 	});
 };
 
