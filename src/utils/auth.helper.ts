@@ -11,7 +11,7 @@ export interface tokenProps {
 export const createToken = ({ userId, role }: tokenProps) => {
 	const secret = config.jwt.secret as string;
 	const token = jwt.sign({ userId, role }, secret, {
-		expiresIn: "1h",
+		expiresIn: "1d",
 	});
 	return token;
 };

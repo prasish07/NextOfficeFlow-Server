@@ -30,7 +30,7 @@ const employeeSchema = new mongoose.Schema({
 	salary: { type: Number, required: true },
 	startDate: { type: Date, required: true },
 	endDate: { type: Date, required: true },
-	UserId: {
+	userId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},

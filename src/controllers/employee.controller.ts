@@ -5,21 +5,27 @@ import Employee from "../modals/employee";
 import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
+import { hashPassword } from "../utils/auth.helper";
 
-export interface employeeProps {
+export type employeeProps = {
 	name: string;
 	position: string;
 	department: string;
+	status: string;
 	team: string;
 	manager: string;
 	description: string;
-	githubUsername: string;
-	appraisalHistory: string[];
+	githubUsername?: string;
+	appraisalHistory?: string[];
 	salary: number;
 	startDate: Date;
 	endDate: Date;
 	userId: string;
-}
+	from: string;
+	to: string;
+};
+
+type EmployeeDocument = Document & employeeProps;
 
 export const createEmployee = async (req: Request, res: Response) => {
 	const {
@@ -52,6 +58,8 @@ export const createEmployee = async (req: Request, res: Response) => {
 
 	const password = `${name}@123`;
 
+	const encryptedPassword = hashPassword(password);
+
 	// Create if same email exist or not
 	let existingUser = await User.findOne({ email });
 
@@ -83,7 +91,7 @@ export const createEmployee = async (req: Request, res: Response) => {
 	// Create new Employee with email and role
 	const userEmployee = new User({
 		email,
-		password,
+		password: encryptedPassword,
 		role,
 	});
 
@@ -97,26 +105,43 @@ export const createEmployee = async (req: Request, res: Response) => {
 
 	res.status(StatusCodes.CREATED).json({
 		message: "Employee created successfully",
+		data: updatedEmployee,
 	});
 };
 
 export const updateEmployee = async (req: Request, res: Response) => {
 	const employeeInfo = req.body;
-	const employeeId = req.params.id;
+	const { employeeId } = req.params;
+
+	const user = (req as CustomerRequestInterface).user;
+
+	if (employeeInfo.rule === "admin" && user.role !== "admin") {
+		throw new customAPIErrors(
+			"You are not authorized to create admin position employee",
+			StatusCodes.UNAUTHORIZED
+		);
+	}
 
 	if (!employeeId) {
 		throw new customAPIErrors("Employee Id not found", StatusCodes.NOT_FOUND);
 	}
 
-	const employeeUpdate = await Employee.findByIdAndUpdate(
-		employeeId,
-		...employeeInfo
+	const employeeUpdate: EmployeeDocument | null =
+		await Employee.findByIdAndUpdate(
+			employeeId,
+			{ $set: employeeInfo },
+			{ new: true }
+		);
+
+	const userUpdate = await User.findByIdAndUpdate(
+		employeeUpdate?.userId,
+		{ $set: { role: employeeInfo.role, email: employeeInfo.email } },
+		{ new: true }
 	);
 
-	if (!employeeUpdate) {
+	if (!employeeUpdate || !userUpdate) {
 		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
 	}
-
 	res.status(StatusCodes.OK).json({
 		message: "Employee updated successfully",
 		data: employeeUpdate,
@@ -124,18 +149,22 @@ export const updateEmployee = async (req: Request, res: Response) => {
 };
 
 export const deleteEmployee = async (req: Request, res: Response) => {
-	const employeeId = req.params.id;
+	const { employeeId } = req.params;
 
 	if (!employeeId) {
 		throw new customAPIErrors("Employee Id not found", StatusCodes.NOT_FOUND);
 	}
 
-	const employeeDelete = await Employee.findByIdAndDelete(employeeId);
-
-	console.log(employeeDelete);
+	const employeeDelete: any = await Employee.findByIdAndDelete(employeeId);
 
 	if (!employeeDelete) {
 		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
+	}
+
+	const userDelete = await User.findByIdAndDelete(employeeDelete.userId);
+
+	if (!userDelete) {
+		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
 	}
 
 	res.status(StatusCodes.OK).json({
@@ -158,13 +187,13 @@ export const getAllEmployees = async (req: Request, res: Response) => {
 };
 
 export const getEmployee = async (req: Request, res: Response) => {
-	const employeeId = req.params.id;
+	const { employeeId } = req.params;
 
 	if (!employeeId) {
 		throw new customAPIErrors("Employee Id not found", StatusCodes.NOT_FOUND);
 	}
 
-	const employee = await Employee.findById(employeeId);
+	const employee = await Employee.findById(employeeId).populate("userId");
 
 	if (!employee) {
 		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
