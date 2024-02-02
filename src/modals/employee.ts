@@ -16,6 +16,9 @@ export interface IEmployee extends mongoose.Document {
 	from: string;
 	to: string;
 	status: string;
+	jobDescription: string;
+	educationDocument: string[];
+	NormalDocument: string[];
 }
 
 const employeeSchema = new mongoose.Schema({
@@ -37,6 +40,12 @@ const employeeSchema = new mongoose.Schema({
 	from: { type: String, required: true },
 	to: { type: String, required: true },
 	status: { type: String, required: true },
+	jobDescription: { type: String },
+	documents: [
+		{
+			type: String,
+		},
+	],
 });
 
 const Employee = mongoose.model<IEmployee>("Employee", employeeSchema);

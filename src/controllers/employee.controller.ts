@@ -45,6 +45,7 @@ export const createEmployee = async (req: Request, res: Response) => {
 		from,
 		to,
 		status,
+		documents,
 	} = req.body;
 
 	const user = (req as CustomerRequestInterface).user;
@@ -56,7 +57,10 @@ export const createEmployee = async (req: Request, res: Response) => {
 		);
 	}
 
-	const password = `${name}@123`;
+	const splitName = name.split(" ");
+	const firstName = splitName[0];
+
+	const password = `${firstName}@123`;
 
 	const encryptedPassword = hashPassword(password);
 
@@ -84,6 +88,7 @@ export const createEmployee = async (req: Request, res: Response) => {
 		from,
 		to,
 		status,
+		documents,
 	});
 
 	await employee.save();
@@ -115,7 +120,7 @@ export const updateEmployee = async (req: Request, res: Response) => {
 
 	const user = (req as CustomerRequestInterface).user;
 
-	if (employeeInfo.rule === "admin" && user.role !== "admin") {
+	if (employeeInfo.role === "admin" && user.role !== "admin") {
 		throw new customAPIErrors(
 			"You are not authorized to create admin position employee",
 			StatusCodes.UNAUTHORIZED

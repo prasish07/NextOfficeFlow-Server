@@ -68,7 +68,12 @@ export const login = async (req: Request, res: Response) => {
 		.json({ message: "Login successful", userId: user._id, role: user.role });
 };
 
-export const logout = async (req: Request, res: Response) => {
+// export const logout = async (req: Request, res: Response) => {
+// 	res.clearCookie("token");
+// 	res.status(StatusCodes.OK).json({ message: "Logout successful" });
+// };
+
+export const signOut = async (req: Request, res: Response) => {
 	res.clearCookie("token");
 	res.status(StatusCodes.OK).json({ message: "Logout successful" });
 };

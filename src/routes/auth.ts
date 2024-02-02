@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import {
 	getUserInfo,
 	login,
-	logout,
+	signOut,
 	register,
 } from "../controllers/auth.controller";
 import { googleOauthHandler } from "../controllers/auth.controller";
@@ -15,8 +15,9 @@ import {
 const router = Router();
 
 router.post("/user/login", login);
-router.post("/user/logout", validateToken, logout);
+// router.post("/user/logout", validateToken, logout);
 router.post("/user/register", register);
+router.post("/user/sign-out", validateToken, signOut);
 
 router.post("/oauth", async (req: Request, res: Response) => {
 	try {
