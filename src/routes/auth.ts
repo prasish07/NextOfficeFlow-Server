@@ -4,6 +4,7 @@ import {
 	login,
 	signOut,
 	register,
+	singleUserVerification,
 } from "../controllers/auth.controller";
 import { googleOauthHandler } from "../controllers/auth.controller";
 import { getGoogleOauthUrl } from "../middleware/getGoogleOauthUrl";
@@ -32,5 +33,7 @@ router.post("/oauth", async (req: Request, res: Response) => {
 router.post("/oauth/google", googleOauthHandler);
 
 router.get("/user/info", validateToken, getUserInfo);
+
+router.post("/user/verification", singleUserVerification);
 
 export default router;

@@ -5,6 +5,9 @@ export interface IUser extends mongoose.Document {
 	password: string;
 	role: string;
 	token: string;
+	verificationPin: string;
+	verified: boolean;
+	verificationPinExpires: Date;
 }
 
 const userSchema = new mongoose.Schema({
@@ -20,6 +23,9 @@ const userSchema = new mongoose.Schema({
 		default: "employee",
 	},
 	token: { type: String },
+	verificationPin: String,
+	verified: { type: Boolean, default: false },
+	verificationPinExpires: Date,
 });
 
 const User = mongoose.model<IUser>("User", userSchema);
