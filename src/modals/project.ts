@@ -9,6 +9,7 @@ export interface IProject extends mongoose.Document {
 	UserId: string;
 	Progress: number;
 	status: string;
+	estimatedTime: string;
 }
 
 const projectSchema = new mongoose.Schema({
@@ -26,8 +27,9 @@ const projectSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
-	Progress: { type: Number, required: true },
-	status: { type: String, required: true },
+	Progress: { type: Number },
+	status: { type: String, default: "To-Do" },
+	estimatedTime: { type: String },
 });
 
 const Project = mongoose.model<IProject>("Project", projectSchema);

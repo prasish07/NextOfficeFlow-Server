@@ -57,6 +57,6 @@ const TicketSchema = new mongoose.Schema({
 	],
 });
 
-const Project = mongoose.model<ITicket>("Project", TicketSchema);
+const Ticket = mongoose.model<ITicket>("Ticket", TicketSchema);
 
-export default Project;
+export default Ticket;

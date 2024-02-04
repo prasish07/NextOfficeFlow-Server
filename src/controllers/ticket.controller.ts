@@ -9,61 +9,66 @@ import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
 import Ticket from "../modals/ticket";
 
-export const createProject = async (
-	req: CustomerRequestInterface,
-	res: Response
-) => {
+export const createTicket = async (req: Request, res: Response) => {
 	const detail = req.body;
 	const user = (req as CustomerRequestInterface).user;
 
-	const project = new Project({
+	const ticket = new Ticket({
 		userId: user.userId,
 		...detail,
 	});
-	await project.save();
+	await ticket.save();
 	res.status(StatusCodes.CREATED).json({
 		message: "Project created successfully",
-		project,
+		ticket,
 	});
 };
 
-export const getProjects = async (req: Request, res: Response) => {
-	const projects = await Project.find()
+export const getTickets = async (req: Request, res: Response) => {
+	const tickets = await Ticket.find()
 		.populate("reporterId")
 		.populate("assigneeId");
-	res.status(StatusCodes.OK).json({ projects });
+	res.status(StatusCodes.OK).json({ tickets });
 };
 
-export const getOneProject = async (req: Request, res: Response) => {
-	const { projectId } = req.params;
-	const project = await Project.findById(projectId)
+export const getOneTicket = async (req: Request, res: Response) => {
+	const { ticketId } = req.params;
+	const ticket = await Ticket.findById(ticketId)
 		.populate("reporterId")
 		.populate("assigneeId");
-	if (!project) {
+	if (!ticket) {
 		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
 	}
-	res.status(StatusCodes.OK).json({ project });
+	res.status(StatusCodes.OK).json({ ticket });
 };
 
-export const updateProject = async (req: Request, res: Response) => {
-	const { projectId } = req.params;
+export const updateTicket = async (req: Request, res: Response) => {
+	const { ticketId } = req.params;
 	const detail = req.body;
-	const project = await Project.findByIdAndUpdate(projectId, detail, {
+	const ticket = await Ticket.findByIdAndUpdate(ticketId, detail, {
 		new: true,
 		runValidators: true,
 	});
 
-	if (!project) {
+	if (!ticket) {
 		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
 	}
-	res.status(StatusCodes.OK).json({ message: "Updated Successfully", project });
+	res.status(StatusCodes.OK).json({ message: "Updated Successfully", ticket });
 };
 
-export const deleteProject = async (req: Request, res: Response) => {
-	const { projectId } = req.params;
-	const project = await Project.findByIdAndDelete(projectId);
-	if (!project) {
+export const deleteTicket = async (req: Request, res: Response) => {
+	const { ticketId } = req.params;
+	const ticket = await Ticket.findByIdAndDelete(ticketId);
+	if (!ticket) {
 		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
 	}
 	res.status(StatusCodes.OK).json({ message: "Deleted Successfully" });
+};
+
+export const getProjectTickets = async (req: Request, res: Response) => {
+	const { projectId } = req.params;
+	const tickets = await Ticket.find({ linkedProjects: projectId })
+		.populate("reporterId")
+		.populate("assigneeId");
+	res.status(StatusCodes.OK).json({ tickets });
 };

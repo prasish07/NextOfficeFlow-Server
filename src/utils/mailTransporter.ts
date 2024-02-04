@@ -29,7 +29,6 @@ const sentEmail = async (
 	subject: string
 ): Promise<void> => {
 	try {
-		console.log(config.email, config.password);
 		const transporter = nodemailer.createTransport(mailerConfig);
 		const mailOptions = {
 			from: config.email as string,
