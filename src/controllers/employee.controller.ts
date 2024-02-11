@@ -221,3 +221,17 @@ export const getUserInformation = async (req: Request, res: Response) => {
 		data: userInfo,
 	});
 };
+
+export const getAllUserWithEmployeeRole = async (
+	req: Request,
+	res: Response
+) => {
+	const users = await User.find({ role: "employee" });
+	if (!users.length) {
+		throw new customAPIErrors("No user found", StatusCodes.NOT_FOUND);
+	}
+	res.status(StatusCodes.OK).json({
+		message: "Users found",
+		data: users,
+	});
+};

@@ -34,8 +34,8 @@ const TicketSchema = new mongoose.Schema({
 		ref: "User",
 	},
 	priority: { type: String },
-	startDate: { type: Date, required: true },
-	dueDate: { type: Date, required: true },
+	startDate: { type: Date },
+	dueDate: { type: Date },
 	estimatedTime: { type: String },
 	reporterId: {
 		type: mongoose.Schema.Types.ObjectId,
