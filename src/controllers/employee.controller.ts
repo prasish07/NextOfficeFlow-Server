@@ -209,3 +209,15 @@ export const getEmployee = async (req: Request, res: Response) => {
 		data: employee,
 	});
 };
+
+export const getUserInformation = async (req: Request, res: Response) => {
+	const { userId } = req.params;
+	const userInfo = await Employee.findOne({ userId }).populate("userId");
+	if (!userInfo) {
+		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
+	}
+	res.status(StatusCodes.OK).json({
+		message: "User found",
+		data: userInfo,
+	});
+};

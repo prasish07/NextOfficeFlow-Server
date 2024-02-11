@@ -5,6 +5,9 @@ import {
 	signOut,
 	register,
 	singleUserVerification,
+	changePassword,
+	forgetPassword,
+	resetPassword,
 } from "../controllers/auth.controller";
 import { googleOauthHandler } from "../controllers/auth.controller";
 import { getGoogleOauthUrl } from "../middleware/getGoogleOauthUrl";
@@ -35,5 +38,11 @@ router.post("/oauth/google", googleOauthHandler);
 router.get("/user/info", validateToken, getUserInfo);
 
 router.post("/user/verification", singleUserVerification);
+
+router.post("/user/changePassword", validateToken, changePassword);
+
+router.post("/user/sentCode/resetPassword", forgetPassword);
+
+router.post("/user/resetPassword", resetPassword);
 
 export default router;

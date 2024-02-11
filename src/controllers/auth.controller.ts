@@ -155,9 +155,12 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
 	res.json({ ...tokenPayload, message: "Login successful" });
 };
 
-export const getUserInfo = (req: Request, res: Response) => {
+export const getUserInfo = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
-	res.status(StatusCodes.OK).json({ user });
+
+	const details = await User.findById(user.userId);
+
+	res.status(StatusCodes.OK).json({ details });
 };
 
 export const singleUserVerification = async (req: Request, res: Response) => {
@@ -199,4 +202,132 @@ export const singleUserVerification = async (req: Request, res: Response) => {
 		userId: user._id,
 		role: user.role,
 	});
+};
+
+export const changePassword = async (req: Request, res: Response) => {
+	const { password, newPassword } = req.body;
+
+	if (!password || !newPassword) {
+		throw new customAPIErrors(
+			"Please provide password and new password",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	const { userId } = (req as CustomerRequestInterface).user;
+
+	const user = await User.findById(userId);
+
+	if (!user) {
+		throw new customAPIErrors("Invalid credentials", StatusCodes.UNAUTHORIZED);
+	}
+
+	const isMatch = await comparePassword(password, user.password);
+
+	if (!isMatch) {
+		throw new customAPIErrors(
+			"Old password is wrong",
+			StatusCodes.UNAUTHORIZED
+		);
+	}
+
+	const EncryptedPassword = hashPassword(newPassword);
+
+	const updateUser = await User.findOneAndUpdate(
+		{ _id: userId },
+		{
+			$set: {
+				password: EncryptedPassword,
+			},
+		}
+	);
+
+	if (!updateUser) {
+		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
+	}
+
+	res.status(StatusCodes.OK).json({ message: "Password changed successfully" });
+};
+
+export const forgetPassword = async (req: Request, res: Response) => {
+	const { email } = req.body;
+
+	if (!email) {
+		throw new customAPIErrors("Please provide email", StatusCodes.BAD_REQUEST);
+	}
+
+	const user = await User.findOne({ email });
+
+	if (!user) {
+		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
+	}
+
+	const pin = generatePin();
+
+	// pin expire date
+	const expirationTime = new Date().getTime() + 130000;
+
+	const updateUser = await User.findOneAndUpdate(
+		{ email },
+		{
+			$set: {
+				verificationPin: pin.toString(),
+				verificationPinExpires: expirationTime,
+			},
+		},
+		{ new: true, runValidators: true }
+	);
+	const boilerPlate = `<div style="font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px;">
+        <h2 style="color: #333;">Hello,</h2>
+        <p style="color: #333;">Please use the following PIN to change your password:</p>
+        <div style="display: inline-block; background-color: #3498db; color: #fff; padding: 10px 20px; border-radius: 5px; margin-bottom: 20px;">
+            <h3 style="margin: 0; font-size: 24px; font-weight: bold;">${pin}</h3>
+        </div>
+        <p style="color: #333;">If you did not request to change your password, please ignore this email.</p>
+        <p style="color: #333;">Thank you!</p>
+    </div>`;
+
+	sentEmail(email, boilerPlate, "Email verification");
+
+	return res.status(StatusCodes.OK).json({
+		message: "Change Password",
+		verified: false,
+		userId: user._id,
+		role: user.role,
+	});
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+	const { email, newPassword } = req.body;
+
+	if (!email || !newPassword) {
+		throw new customAPIErrors(
+			"Please provide email and new password",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	const user = await User.findOne({ email });
+
+	if (!user) {
+		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
+	}
+
+	const EncryptedPassword = hashPassword(newPassword);
+
+	const updateUser = await User.findOneAndUpdate(
+		{ email },
+		{
+			$set: {
+				password: EncryptedPassword,
+			},
+		},
+		{ new: true, runValidators: true }
+	);
+
+	if (!updateUser) {
+		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
+	}
+
+	res.status(StatusCodes.OK).json({ message: "Password changed successfully" });
 };
