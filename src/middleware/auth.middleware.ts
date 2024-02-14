@@ -19,7 +19,6 @@ export const validateToken = async (
 	res: Response,
 	next: NextFunction
 ) => {
-	console.log(req);
 	const token = req.signedCookies.token;
 	if (!token) {
 		return next(

@@ -10,6 +10,7 @@ import {
 	getAllProject,
 	getProject,
 	getProjectStatusCount,
+	addAssigneeToProject,
 } from "../controllers/project.controller";
 
 import { getProjectTickets } from "../controllers/ticket.controller";
@@ -28,6 +29,15 @@ router
 		authorizePermission("employee", "admin"),
 		getProjectStatusCount
 	);
+
+router
+	.route("/project/:projectId/addAssignee")
+	.post(
+		validateToken,
+		authorizePermission("employee", "admin"),
+		addAssigneeToProject
+	);
+
 router
 	.route("/project/:projectId")
 	.get(validateToken, authorizePermission("employee", "admin"), getProject)

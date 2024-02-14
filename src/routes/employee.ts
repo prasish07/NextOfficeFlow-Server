@@ -10,6 +10,7 @@ import {
 	getAllEmployees,
 	getEmployee,
 	getUserInformation,
+	getAllUserWithEmployeeRole,
 } from "../controllers/employee.controller";
 
 const router = Router();
@@ -22,6 +23,8 @@ router
 router
 	.route("/user/information/:userId")
 	.get(validateToken, getUserInformation);
+
+router.route("/employee/all").get(validateToken, getAllUserWithEmployeeRole);
 
 router
 	.route("/employee/:employeeId")

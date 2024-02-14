@@ -14,7 +14,7 @@ export const createTicket = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
 
 	const ticket = new Ticket({
-		userId: user.userId,
+		reporterId: user.userId,
 		...detail,
 	});
 	await ticket.save();

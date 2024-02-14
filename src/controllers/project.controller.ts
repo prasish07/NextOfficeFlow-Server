@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
 import customAPIErrors from "../errors/customError";
-import Project from "../modals/project";
+import Project, { IProject } from "../modals/project";
 import Comment from "../modals/comment";
 import Attachment from "../modals/attachment";
 import { config } from "../config/config";
@@ -128,4 +128,40 @@ export const getProjectStatusCount = async (req: Request, res: Response) => {
 		overDue,
 		cancel,
 	});
+};
+
+export const addAssigneeToProject = async (req: Request, res: Response) => {
+	const { assigneeIds } = req.body;
+
+	const { projectId } = req.params;
+
+	const project = await Project.findById(projectId);
+
+	if (!project) {
+		throw new customAPIErrors(
+			`No project found with id: ${projectId}`,
+			StatusCodes.NOT_FOUND
+		);
+	}
+
+	const existingAssigneeIds = project.AssigneeId || [];
+
+	// Filter out assigneeIds that already exist in the project
+	const newAssigneeIds = assigneeIds.filter(
+		(id: any) => !existingAssigneeIds.includes(id)
+	);
+
+	if (newAssigneeIds.length === 0) {
+		return res
+			.status(StatusCodes.OK)
+			.json({ message: "No new assignees added", project });
+	}
+
+	project.AssigneeId = [...existingAssigneeIds, ...newAssigneeIds];
+
+	await project.save();
+
+	res
+		.status(StatusCodes.OK)
+		.json({ message: "Assignees added successfully", project });
 };

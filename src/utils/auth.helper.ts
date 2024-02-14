@@ -41,7 +41,6 @@ export const attachCookiesToResponse = (
 		secure: true,
 		signed: true,
 	};
-	console.log("token", token);
 	res.cookie("token", token, options);
 };
 
