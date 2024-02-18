@@ -178,7 +178,10 @@ export const manualAttendance = async (req: Request, res: Response) => {
 };
 
 export const getAttendanceByUserId = async (req: Request, res: Response) => {
-	const { userId } = req.params;
+	let { userId } = req.params;
+	if (!userId) {
+		userId = (req as CustomerRequestInterface).user.userId;
+	}
 	const { date, late, overtime } = req.query;
 
 	const filter: any = { userId };

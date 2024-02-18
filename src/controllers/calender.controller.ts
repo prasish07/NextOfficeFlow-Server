@@ -57,27 +57,19 @@ export const getEvent = async (req: Request, res: Response) => {
 
 export const updateEvent = async (req: Request, res: Response) => {
 	const { eventId } = req.params;
-	const { title, description, startDate, endDate, type } = req.body;
-	const event = await CalendarEvent.findById(eventId);
-	if (!event) {
+	const updateEvent = await CalendarEvent.findByIdAndUpdate(eventId, {
+		...req.body,
+	});
+	if (!updateEvent) {
 		throw new customAPIErrors(
 			`Event with id ${eventId} not found`,
 			StatusCodes.NOT_FOUND
 		);
 	}
 
-	event.title = title;
-	event.description = description;
-	event.startDate = startDate;
-	event.endDate = endDate;
-	event.type = type;
-	event.updatedAt = new Date();
-
-	await event.save();
-
 	return res.status(StatusCodes.OK).json({
 		message: "Event updated successfully",
-		event,
+		updateEvent,
 	});
 };
 

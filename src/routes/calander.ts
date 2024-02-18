@@ -24,7 +24,9 @@ router
 router
 	.route("/event/:eventId")
 	.get(validateToken, getEvent)
-	.put(validateToken, authorizePermission("admin", "HR"), updateEvent)
+	.patch(validateToken, authorizePermission("admin", "HR"), updateEvent)
 	.delete(validateToken, authorizePermission("admin", "HR"), deleteEvent);
 
 router.route("/events").get(validateToken, getAllEvents);
+
+export default router;

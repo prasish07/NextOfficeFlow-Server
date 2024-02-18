@@ -24,9 +24,11 @@ router
 router
 	.route("/request/:requestId")
 	.get(validateToken, getRequest)
-	.put(validateToken, authorizePermission("admin", "HR"), updateRequest)
+	.patch(validateToken, authorizePermission("admin", "HR"), updateRequest)
 	.delete(validateToken, authorizePermission("admin", "HR"), deleteRequest);
 
 router
 	.route("/requests")
 	.get(validateToken, authorizePermission("admin", "HR"), getAllRequests);
+
+export default router;

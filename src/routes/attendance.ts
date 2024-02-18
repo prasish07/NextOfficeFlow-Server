@@ -33,6 +33,8 @@ router
 	.route("/attendance/me/today")
 	.get(validateToken, getAttendanceByUserIdAndToday);
 
-router.route("/attendance/:userId").get(validateToken, getAttendanceByUserId);
+router
+	.route("/attendance/employee/:userId?")
+	.get(validateToken, getAttendanceByUserId);
 
 export default router;

@@ -5,6 +5,8 @@ import ticket from "./ticket";
 import comment from "./comment";
 import attachment from "./attachment";
 import attendance from "./attendance";
+import request from "./request";
+import CalendarEvent from "./calander";
 
 import { Router } from "express";
 
@@ -17,5 +19,7 @@ router.use(ticket);
 router.use(comment);
 router.use(attachment);
 router.use(attendance);
+router.use(request);
+router.use(CalendarEvent);
 
 export default router;
