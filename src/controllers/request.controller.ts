@@ -4,7 +4,6 @@ import customAPIErrors from "../errors/customError";
 import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
-import mongoose from "mongoose";
 import Requests from "../modals/request";
 
 export const createRequest = async (req: Request, res: Response) => {
