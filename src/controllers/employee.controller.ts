@@ -235,3 +235,15 @@ export const getAllUserWithEmployeeRole = async (
 		data: users,
 	});
 };
+
+export const getEmployeeByUserId = async (req: Request, res: Response) => {
+	const { userId } = (req as CustomerRequestInterface).user;
+	const employee = await Employee.findOne({ userId });
+	if (!employee) {
+		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
+	}
+	res.status(StatusCodes.OK).json({
+		message: "Employee found",
+		data: employee,
+	});
+};

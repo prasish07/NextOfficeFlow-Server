@@ -14,7 +14,7 @@ export interface ITicket extends mongoose.Document {
 	reporterId: string;
 	Progress: number;
 	spentTime: string;
-	linkedProjects: string[];
+	linkedProject: string;
 	comments: string[];
 }
 
@@ -43,12 +43,10 @@ const TicketSchema = new mongoose.Schema({
 	},
 	Progress: { type: Number },
 	spentTime: { type: String },
-	linkedProjects: [
-		{
-			type: mongoose.Schema.Types.ObjectId,
-			ref: "Project",
-		},
-	],
+	linkedProject: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "Project",
+	},
 	comments: [
 		{
 			type: mongoose.Schema.Types.ObjectId,

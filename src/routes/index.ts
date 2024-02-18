@@ -4,6 +4,7 @@ import project from "./project";
 import ticket from "./ticket";
 import comment from "./comment";
 import attachment from "./attachment";
+import attendance from "./attendance";
 
 import { Router } from "express";
 
@@ -15,5 +16,6 @@ router.use(project);
 router.use(ticket);
 router.use(comment);
 router.use(attachment);
+router.use(attendance);
 
 export default router;
