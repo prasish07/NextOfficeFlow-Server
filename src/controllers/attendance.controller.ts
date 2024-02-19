@@ -32,7 +32,6 @@ export const checkIn = async (req: Request, res: Response) => {
 	});
 
 	if (existingAttendance) {
-		// If record exists, update it
 		existingAttendance.type = type;
 		existingAttendance.location = location;
 		existingAttendance.checkIn = checkIn;
@@ -42,7 +41,6 @@ export const checkIn = async (req: Request, res: Response) => {
 
 		await existingAttendance.save();
 	} else {
-		// If record does not exist, create a new one
 		const attendance = new Attendance({
 			userId: user.userId,
 			date: new Date(
@@ -71,7 +69,6 @@ export const checkOut = async (req: Request, res: Response) => {
 
 	const checkOut = new Date();
 
-	// Find the attendance record for the user and current date
 	const attendance = await Attendance.findOne({
 		userId: user.userId,
 		date: {
@@ -128,7 +125,6 @@ export const getAllTimeAttendance = async (req: Request, res: Response) => {
 			);
 			filter.date = { $gte: firstDayOfMonth, $lt: today };
 		} else if (typeof date === "string") {
-			// Assuming the date format is 'YYYY-MM-DD'
 			const [from, to] = date.split("-");
 			filter.date = { $gte: new Date(from), $lt: new Date(to) };
 		}

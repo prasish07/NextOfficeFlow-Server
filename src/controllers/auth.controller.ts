@@ -297,6 +297,43 @@ export const forgetPassword = async (req: Request, res: Response) => {
 	});
 };
 
+export const verifyPin = async (req: Request, res: Response) => {
+	const { pin, id } = req.body;
+	if (!id || !pin) {
+		throw new customAPIErrors(
+			"Please provide=> id and pin",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+	const user = await User.findById(id);
+
+	if (!user) {
+		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
+	}
+	if (user.verificationPin !== pin) {
+		throw new customAPIErrors("Invalid Pin", StatusCodes.BAD_REQUEST);
+	}
+	const now = new Date();
+
+	if (user.verificationPinExpires < now) {
+		throw new customAPIErrors("Pin expired", StatusCodes.BAD_REQUEST);
+	}
+	const updateUser = await User.findOneAndUpdate(
+		{ _id: id },
+		{
+			$set: {
+				verified: true,
+			},
+		}
+	);
+
+	res.status(StatusCodes.OK).json({
+		message: "Pin verified",
+		userId: user._id,
+		role: user.role,
+	});
+};
+
 export const resetPassword = async (req: Request, res: Response) => {
 	const { email, newPassword } = req.body;
 
