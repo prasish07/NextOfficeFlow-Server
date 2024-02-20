@@ -3,8 +3,8 @@ import mongoose, { Schema } from "mongoose";
 export interface ICalendarEvent extends mongoose.Document {
 	title: string;
 	description: string;
-	startDate: Date;
-	endDate: Date;
+	start: Date;
+	end: Date;
 	type: string;
 	createdBy: string;
 	createdAt: Date;
@@ -14,8 +14,8 @@ export interface ICalendarEvent extends mongoose.Document {
 const calendarEventSchema = new Schema({
 	title: { type: String, required: true },
 	description: { type: String },
-	startDate: { type: Date },
-	endDate: { type: Date },
+	start: { type: Date, required: true },
+	end: { type: Date, required: true },
 	type: { type: String, required: true },
 	createdBy: {
 		type: mongoose.Schema.Types.ObjectId,

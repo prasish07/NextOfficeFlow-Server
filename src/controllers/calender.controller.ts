@@ -8,12 +8,12 @@ import CalendarEvent from "../modals/calender";
 
 export const createEvent = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
-	const { title, description, startDate, endDate, type } = req.body;
+	const { title, description, start, end, type } = req.body;
 	const event = new CalendarEvent({
 		title,
 		description,
-		startDate,
-		endDate,
+		start,
+		end,
 		type,
 		createdBy: user.userId,
 	});
@@ -88,14 +88,16 @@ export const deleteEvent = async (req: Request, res: Response) => {
 };
 
 export const getAllEvents = async (req: Request, res: Response) => {
-	const { startDate, endDate } = req.query;
+	const { start, end } = req.query;
+
+	console.log(req.query);
 
 	let filter: any = {};
 
-	if (startDate && endDate) {
-		filter.startDate = {
-			$gte: new Date(startDate as string),
-			$lte: new Date(endDate as string),
+	if (start && end) {
+		filter.start = {
+			$gte: new Date(start as string),
+			$lte: new Date(end as string),
 		};
 	} else {
 		const today = new Date();
@@ -107,20 +109,17 @@ export const getAllEvents = async (req: Request, res: Response) => {
 		const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 		const startOfYear = new Date(today.getFullYear(), 0, 1);
 
-		if (startDate === "thisWeek") {
-			filter.startDate = { $gte: startOfWeek, $lte: today };
-		} else if (startDate === "thisMonth") {
-			filter.startDate = { $gte: startOfMonth, $lte: today };
-		} else if (startDate === "thisYear") {
-			filter.startDate = { $gte: startOfYear, $lte: today };
+		if (start === "thisWeek") {
+			filter.start = { $gte: startOfWeek, $lte: today };
+		} else if (start === "thisMonth") {
+			filter.start = { $gte: startOfMonth, $lte: today };
+		} else if (start === "thisYear") {
+			filter.start = { $gte: startOfYear, $lte: today };
 		}
 	}
 
+	// Add filter for custom date range
 	const events = await CalendarEvent.find(filter);
-
-	if (!events || events.length === 0) {
-		throw new customAPIErrors("No events found", StatusCodes.NOT_FOUND);
-	}
 
 	res.status(StatusCodes.OK).json({
 		events,
