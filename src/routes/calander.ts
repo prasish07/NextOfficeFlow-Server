@@ -14,6 +14,7 @@ import {
 	getEvent,
 	getEvents,
 	updateEvent,
+	getAllEventsUpcomingTwoMonths,
 } from "../controllers/calender.controller";
 
 router
@@ -28,5 +29,9 @@ router
 	.delete(validateToken, authorizePermission("admin", "HR"), deleteEvent);
 
 router.route("/events").get(validateToken, getAllEvents);
+
+router
+	.route("/events/upcoming")
+	.get(validateToken, getAllEventsUpcomingTwoMonths);
 
 export default router;

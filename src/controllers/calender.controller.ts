@@ -118,10 +118,41 @@ export const getAllEvents = async (req: Request, res: Response) => {
 		}
 	}
 
-	// Add filter for custom date range
 	const events = await CalendarEvent.find(filter);
 
 	res.status(StatusCodes.OK).json({
 		events,
 	});
+};
+
+export const getAllEventsUpcomingTwoMonths = async (
+	req: Request,
+	res: Response
+) => {
+	const today = new Date();
+	const twoMonthsLater = new Date(
+		today.getFullYear(),
+		today.getMonth() + 2,
+		today.getDate()
+	);
+
+	const filter = {
+		start: {
+			$gte: today,
+			$lte: twoMonthsLater,
+		},
+	};
+
+	try {
+		const events = await CalendarEvent.find(filter);
+
+		res.status(StatusCodes.OK).json({
+			events,
+		});
+	} catch (error) {
+		console.error("Error fetching events:", error);
+		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+			error: "Internal Server Error",
+		});
+	}
 };
