@@ -4,19 +4,78 @@ import customAPIErrors from "../errors/customError";
 import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
-import Requests from "../modals/request";
+import Requests, {
+	Leave,
+	Attendance,
+	Allowance,
+	Overtime,
+} from "../modals/request";
 
 export const createRequest = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
-	const { type, details } = req.body;
-	const request = new Requests({
-		userId: user.userId,
-		type,
-		details,
-	});
+	const { requestType } = req.body;
+	let request;
 
+	if (requestType === "leave") {
+		const { startDate, endDate, reason, type } = req.body;
+		const leave = new Leave({
+			type,
+			startDate,
+			endDate,
+			reason,
+		});
+		await leave.save();
+		request = new Requests({
+			userId: user.userId,
+			requestType,
+			leaveId: leave._id,
+		});
+	}
+	if (requestType === "allowance") {
+		const { amount, reason } = req.body;
+		const allowance = new Allowance({
+			amount,
+			reason,
+		});
+		await allowance.save();
+		request = new Requests({
+			userId: user.userId,
+			allowanceId: allowance._id,
+			requestType,
+		});
+	}
+	if (requestType === "overtime") {
+		const { date, startTime, endTime, reason } = req.body;
+		const overtime = new Overtime({
+			date,
+			startTime,
+			endTime,
+			reason,
+		});
+		await overtime.save();
+		request = new Requests({
+			userId: user.userId,
+			overtimeId: overtime._id,
+			requestType,
+		});
+	}
+	if (requestType === "attendance") {
+		const { date, reason } = req.body;
+		const attendance = new Attendance({
+			date,
+			reason,
+		});
+		await attendance.save();
+		request = new Requests({
+			userId: user.userId,
+			attendanceId: attendance._id,
+			requestType,
+		});
+	}
+	if (!request) {
+		throw new customAPIErrors("Invalid request type", StatusCodes.BAD_REQUEST);
+	}
 	await request.save();
-
 	return res.status(StatusCodes.CREATED).json({
 		message: "Request created successfully",
 		request,
@@ -25,7 +84,11 @@ export const createRequest = async (req: Request, res: Response) => {
 
 export const getRequests = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
-	const requests = await Requests.find({ userId: user.userId });
+	const requests = await Requests.find({ userId: user.userId })
+		.populate("leaveId")
+		.populate("allowanceId")
+		.populate("overtimeId")
+		.populate("attendanceId");
 
 	if (!requests) {
 		throw new customAPIErrors("No requests found", StatusCodes.NOT_FOUND);
@@ -38,7 +101,11 @@ export const getRequests = async (req: Request, res: Response) => {
 
 export const getRequest = async (req: Request, res: Response) => {
 	const { requestId } = req.params;
-	const request = await Requests.findById(requestId);
+	const request = await Requests.findById(requestId)
+		.populate("leaveId")
+		.populate("allowanceId")
+		.populate("overtimeId")
+		.populate("attendanceId");
 
 	if (!request) {
 		throw new customAPIErrors(
@@ -130,11 +197,11 @@ export const getAllRequests = async (req: Request, res: Response) => {
 	}
 
 	// Use the filter criteria to fetch requests
-	const requests = await Requests.find(filter);
-
-	if (!requests || requests.length === 0) {
-		throw new customAPIErrors("No requests found", StatusCodes.NOT_FOUND);
-	}
+	const requests = await Requests.find(filter)
+		.populate("leaveId")
+		.populate("allowanceId")
+		.populate("overtimeId")
+		.populate("attendanceId");
 
 	return res.status(StatusCodes.OK).json({
 		requests,
