@@ -19,7 +19,7 @@ import {
 router
 	.route("/request")
 	.post(validateToken, createRequest)
-	.get(validateToken, authorizePermission("admin", "HR"), getRequests);
+	.get(validateToken, authorizePermission("employee"), getRequests);
 
 router
 	.route("/request/:requestId")

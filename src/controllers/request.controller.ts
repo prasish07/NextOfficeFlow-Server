@@ -4,6 +4,8 @@ import customAPIErrors from "../errors/customError";
 import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
+import Employee from "../modals/employee";
+
 import Requests, {
 	Leave,
 	Attendance,
@@ -90,12 +92,24 @@ export const getRequests = async (req: Request, res: Response) => {
 		.populate("overtimeId")
 		.populate("attendanceId");
 
-	if (!requests) {
-		throw new customAPIErrors("No requests found", StatusCodes.NOT_FOUND);
-	}
+	// Fetch employee information for each request's userId
+	const requestsData = await Promise.all(
+		requests.map(async (request) => {
+			const employee = await Employee.findOne({ userId: request.userId });
+
+			// Modify the request object to include employee information
+			const modifiedRequest = {
+				employeeName: employee ? employee.name : "Unknown",
+				employeePosition: employee ? employee.position : "Unknown",
+				...request.toJSON(),
+			};
+
+			return modifiedRequest;
+		})
+	);
 
 	return res.status(StatusCodes.OK).json({
-		requests,
+		requests: requestsData,
 	});
 };
 
@@ -203,7 +217,23 @@ export const getAllRequests = async (req: Request, res: Response) => {
 		.populate("overtimeId")
 		.populate("attendanceId");
 
+	// Fetch employee information for each request's userId
+	const requestsData = await Promise.all(
+		requests.map(async (request) => {
+			const employee = await Employee.findOne({ userId: request.userId });
+
+			// Modify the request object to include employee information
+			const modifiedRequest = {
+				employeeName: employee ? employee.name : "Unknown",
+				employeePosition: employee ? employee.position : "Unknown",
+				...request.toJSON(),
+			};
+
+			return modifiedRequest;
+		})
+	);
+
 	return res.status(StatusCodes.OK).json({
-		requests,
+		requests: requestsData,
 	});
 };
