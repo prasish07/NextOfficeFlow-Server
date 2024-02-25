@@ -14,12 +14,21 @@ import {
 	getRequest,
 	getRequests,
 	updateRequest,
+	getUserRequestCount,
 } from "../controllers/request.controller";
 
 router
 	.route("/request")
 	.post(validateToken, createRequest)
-	.get(validateToken, authorizePermission("employee"), getRequests);
+	.get(validateToken, getRequests);
+
+router
+	.route("/request/count")
+	.get(validateToken, authorizePermission("admin", "HR"), getUserRequestCount);
+
+router
+	.route("/request/count/:countType")
+	.get(validateToken, getUserRequestCount);
 
 router
 	.route("/request/:requestId")

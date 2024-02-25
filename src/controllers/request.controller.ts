@@ -86,11 +86,73 @@ export const createRequest = async (req: Request, res: Response) => {
 
 export const getRequests = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
-	const requests = await Requests.find({ userId: user.userId })
+
+	let leaveRequest = 0;
+	let allowanceRequest = 0;
+	let overtimeRequest = 0;
+	let attendanceRequest = 0;
+
+	const { date, status, type } = req.query;
+
+	// Build the filter criteria
+	const filter: any = {};
+
+	filter.userId = user.userId;
+
+	if (date) {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+
+		if (date === "today") {
+			filter.date = today;
+		} else if (date === "yesterday") {
+			const yesterday = new Date(today);
+			yesterday.setDate(today.getDate() - 1);
+			filter.date = yesterday;
+		} else if (date === "thisWeek") {
+			const firstDayOfWeek = new Date(today);
+			firstDayOfWeek.setDate(today.getDate() - today.getDay());
+			filter.date = { $gte: firstDayOfWeek, $lt: today };
+		} else if (date === "thisMonth") {
+			const firstDayOfMonth = new Date(
+				today.getFullYear(),
+				today.getMonth(),
+				1
+			);
+			filter.date = { $gte: firstDayOfMonth, $lt: today };
+		} else {
+			filter.date = new Date(date as string);
+		}
+	}
+
+	if (status) {
+		filter.status = status;
+	}
+
+	if (type) {
+		filter.type = type;
+	}
+
+	const requests = await Requests.find(filter)
 		.populate("leaveId")
 		.populate("allowanceId")
 		.populate("overtimeId")
 		.populate("attendanceId");
+
+	requests.forEach((request) => {
+		if (request.requestType === "leave") {
+			leaveRequest++;
+		}
+		if (request.requestType === "allowance") {
+			allowanceRequest++;
+		}
+		if (request.requestType === "overtime") {
+			overtimeRequest++;
+		}
+		if (request.requestType === "attendance") {
+			attendanceRequest++;
+		}
+	});
 
 	// Fetch employee information for each request's userId
 	const requestsData = await Promise.all(
@@ -110,6 +172,10 @@ export const getRequests = async (req: Request, res: Response) => {
 
 	return res.status(StatusCodes.OK).json({
 		requests: requestsData,
+		leaveRequest,
+		allowanceRequest,
+		overtimeRequest,
+		attendanceRequest,
 	});
 };
 
@@ -169,6 +235,10 @@ export const deleteRequest = async (req: Request, res: Response) => {
 export const getAllRequests = async (req: Request, res: Response) => {
 	// Extract filters from the query parameters
 	const { date, status, type } = req.query;
+	let leaveRequest = 0;
+	let allowanceRequest = 0;
+	let overtimeRequest = 0;
+	let attendanceRequest = 0;
 
 	// Build the filter criteria
 	const filter: any = {};
@@ -195,18 +265,15 @@ export const getAllRequests = async (req: Request, res: Response) => {
 			);
 			filter.date = { $gte: firstDayOfMonth, $lt: today };
 		} else {
-			// Assume custom date is in ISO format (YYYY-MM-DD)
 			filter.date = new Date(date as string);
 		}
 	}
 
 	if (status) {
-		// Example: filter by status
 		filter.status = status;
 	}
 
 	if (type) {
-		// Example: filter by type
 		filter.type = type;
 	}
 
@@ -216,6 +283,21 @@ export const getAllRequests = async (req: Request, res: Response) => {
 		.populate("allowanceId")
 		.populate("overtimeId")
 		.populate("attendanceId");
+
+	requests.forEach((request) => {
+		if (request.requestType === "leave") {
+			leaveRequest++;
+		}
+		if (request.requestType === "allowance") {
+			allowanceRequest++;
+		}
+		if (request.requestType === "overtime") {
+			overtimeRequest++;
+		}
+		if (request.requestType === "attendance") {
+			attendanceRequest++;
+		}
+	});
 
 	// Fetch employee information for each request's userId
 	const requestsData = await Promise.all(
@@ -235,5 +317,86 @@ export const getAllRequests = async (req: Request, res: Response) => {
 
 	return res.status(StatusCodes.OK).json({
 		requests: requestsData,
+		leaveRequest,
+		allowanceRequest,
+		overtimeRequest,
+		attendanceRequest,
+	});
+};
+
+export const getUserRequestCount = async (req: Request, res: Response) => {
+	const user = (req as CustomerRequestInterface).user;
+	let leaveRequest = 0;
+	let allowanceRequest = 0;
+	let overtimeRequest = 0;
+	let attendanceRequest = 0;
+
+	const { countType } = req.params;
+	const { date, status, type } = req.query;
+
+	// Build the filter criteria
+	const filter: any = {};
+
+	if (countType == "user") {
+		filter.userId = user.userId;
+	}
+
+	if (date) {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+
+		if (date === "today") {
+			filter.date = today;
+		} else if (date === "yesterday") {
+			const yesterday = new Date(today);
+			yesterday.setDate(today.getDate() - 1);
+			filter.date = yesterday;
+		} else if (date === "thisWeek") {
+			const firstDayOfWeek = new Date(today);
+			firstDayOfWeek.setDate(today.getDate() - today.getDay());
+			filter.date = { $gte: firstDayOfWeek, $lt: today };
+		} else if (date === "thisMonth") {
+			const firstDayOfMonth = new Date(
+				today.getFullYear(),
+				today.getMonth(),
+				1
+			);
+			filter.date = { $gte: firstDayOfMonth, $lt: today };
+		} else {
+			filter.date = new Date(date as string);
+		}
+	}
+
+	if (status) {
+		filter.status = status;
+	}
+
+	if (type) {
+		filter.type = type;
+	}
+
+	const requests = await Requests.find(filter);
+
+	requests.forEach((request) => {
+		if (request.requestType === "leave") {
+			leaveRequest++;
+		}
+		if (request.requestType === "allowance") {
+			allowanceRequest++;
+		}
+		if (request.requestType === "overtime") {
+			overtimeRequest++;
+		}
+		if (request.requestType === "attendance") {
+			attendanceRequest++;
+		}
+	});
+
+	return res.json({
+		data: requests,
+		leaveRequest,
+		allowanceRequest,
+		overtimeRequest,
+		attendanceRequest,
 	});
 };
