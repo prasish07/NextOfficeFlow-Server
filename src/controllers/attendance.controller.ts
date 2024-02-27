@@ -12,7 +12,7 @@ export const checkIn = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
 	const { location, type, lat, lng } = req.body;
 	const checkIn = new Date();
-	const isLate = checkIn.getHours() >= 9;
+	const status = checkIn.getHours() >= 9 ? "late" : "onTime";
 
 	// Check if an attendance record for the same user and date already exists
 	const existingAttendance = await Attendance.findOne({
@@ -37,7 +37,8 @@ export const checkIn = async (req: Request, res: Response) => {
 		existingAttendance.checkIn = checkIn;
 		existingAttendance.lat = lat;
 		existingAttendance.lng = lng;
-		existingAttendance.late = isLate;
+		existingAttendance.checkInStatus = status;
+		existingAttendance.status = "present";
 
 		await existingAttendance.save();
 	} else {
@@ -53,7 +54,8 @@ export const checkIn = async (req: Request, res: Response) => {
 			location,
 			lat,
 			lng,
-			late: isLate,
+			late: status,
+			status: "present",
 		});
 
 		await attendance.save();
@@ -92,7 +94,9 @@ export const checkOut = async (req: Request, res: Response) => {
 	attendance.checkOut = checkOut;
 
 	const isOvertime = checkOut.getHours() >= 17;
+	const status = checkOut.getHours() < 17 ? "early" : "onTime";
 	attendance.overtime = isOvertime;
+	attendance.checkOutStatus = status;
 
 	await attendance.save();
 
@@ -158,14 +162,17 @@ export const getAllTimeAttendance = async (req: Request, res: Response) => {
 };
 
 export const manualAttendance = async (req: Request, res: Response) => {
-	const { date, checkIn, checkOut, type, location, userId } = req.body;
+	const { email } = req.body;
+
+	const userId = await User.findOne({ email });
+
+	if (!userId) {
+		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
+	}
+
 	const attendance = new Attendance({
-		userId: userId,
-		date,
-		checkIn,
-		checkOut,
-		type,
-		location,
+		...req.body,
+		userId: userId._id,
 	});
 	await attendance.save();
 	res.status(StatusCodes.OK).json({
@@ -262,4 +269,51 @@ export const getAttendanceByUserIdAndToday = async (
 	res.status(StatusCodes.OK).json({
 		attendance: attendance[0],
 	});
+};
+
+export const markAbsentEmployeesForToday = async () => {
+	try {
+		const currentDay = new Date();
+		const dayOfWeek = currentDay.getDay();
+
+		if (dayOfWeek === 0 || dayOfWeek === 6) {
+			console.log("It is a weekend. Skipping making absent for today");
+			return;
+		}
+
+		// Retrieve all employees
+		const employees = await Employee.find().populate("userId");
+
+		const allEmployees = employees.filter(
+			(employee: any) => employee.userId.role === "employee"
+		);
+
+		// Iterate through each employee and check if they have a check-in for today
+		await Promise.all(
+			allEmployees.map(async (employee) => {
+				const employeeCheckInRecord = await Attendance.findOne({
+					userId: employee.userId,
+					date: {
+						$gte: new Date(currentDay),
+						$lt: new Date(
+							new Date(currentDay).setDate(new Date(currentDay).getDate() + 1)
+						),
+					},
+				});
+
+				if (!employeeCheckInRecord) {
+					// If no check-in record, mark the employee as absent
+					const attendance = new Attendance({
+						userId: employee.userId,
+						date: new Date(currentDay),
+						status: "absent",
+					});
+
+					await attendance.save();
+				}
+			})
+		);
+	} catch (error) {
+		console.log(error);
+	}
 };

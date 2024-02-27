@@ -34,4 +34,7 @@ export const config = {
 	},
 	email,
 	password,
+	leaveDetails: {
+		availableLeaves: 12,
+	},
 };

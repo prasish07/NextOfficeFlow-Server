@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
 import customAPIErrors from "../errors/customError";
-import Employee from "../modals/employee";
+import Employee, { LeaveDetail } from "../modals/employee";
 import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
@@ -26,6 +26,18 @@ export type employeeProps = {
 };
 
 type EmployeeDocument = Document & employeeProps;
+
+const createLeaveDetails = async (userId: string) => {
+	const leaveDetail = new LeaveDetail({
+		userId,
+		totalPaidLeave: config.leaveDetails.availableLeaves,
+		availableLeaves: config.leaveDetails.availableLeaves,
+		leavesTaken: 0,
+		totalUnpaidLeaveTaken: 0,
+		year: new Date().getFullYear(),
+	});
+	await leaveDetail.save();
+};
 
 export const createEmployee = async (req: Request, res: Response) => {
 	const {
@@ -107,6 +119,12 @@ export const createEmployee = async (req: Request, res: Response) => {
 		{ userId: userEmployee._id },
 		{ new: true }
 	);
+
+	if (!updatedEmployee) {
+		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
+	}
+
+	await createLeaveDetails(userEmployee._id);
 
 	res.status(StatusCodes.CREATED).json({
 		message: "Employee created successfully",
@@ -246,4 +264,40 @@ export const getEmployeeByUserId = async (req: Request, res: Response) => {
 		message: "Employee found",
 		data: employee,
 	});
+};
+
+export const getEmployeeTotalLeaveDetails = async (
+	req: Request,
+	res: Response
+) => {
+	let userId: string;
+	userId = req.body.userId;
+	if (!userId) {
+		userId = (req as CustomerRequestInterface).user.userId;
+	}
+	const leaveDetails = await LeaveDetail.findOne({ userId }).populate("userId");
+	if (!leaveDetails) {
+		throw new customAPIErrors("Leave details not found", StatusCodes.NOT_FOUND);
+	}
+	res.status(StatusCodes.OK).json({
+		message: "Leave details found",
+		data: leaveDetails,
+	});
+};
+
+export const createLeaveDetailEveryYear = async () => {
+	const employees = await Employee.find();
+	const currentYear = new Date().getFullYear();
+
+	await Promise.all(
+		employees.map(async (employee) => {
+			const leaveDetail = await LeaveDetail.findOne({
+				userId: employee.userId,
+				year: currentYear,
+			});
+			if (!leaveDetail) {
+				await createLeaveDetails(employee.userId);
+			}
+		})
+	);
 };

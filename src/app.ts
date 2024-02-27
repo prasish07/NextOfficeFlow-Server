@@ -9,6 +9,9 @@ import { config } from "./config/config.js";
 import helmet from "helmet";
 import cors from "cors";
 import xss from "xss";
+import cron from "node-cron";
+import { markAbsentEmployeesForToday } from "./controllers/attendance.controller.js";
+import { createLeaveDetailEveryYear } from "./controllers/employee.controller.js";
 
 const app = express();
 
@@ -39,6 +42,25 @@ app.use(notFound);
 
 // error handler
 app.use(errorHandler);
+
+cron.schedule("0 22 * * *", async () => {
+	console.log("Running cron job at 10 pm every day");
+	try {
+		await markAbsentEmployeesForToday();
+	} catch (error) {
+		console.log(error);
+	}
+});
+
+// cron.schedule("53 21 * * *", async () => {
+cron.schedule("0 1 1 1 *", async () => {
+	console.log("Running cron job at 1 am on 1st January every year");
+	try {
+		await createLeaveDetailEveryYear();
+	} catch (error) {
+		console.log(error);
+	}
+});
 
 const start = async () => {
 	try {

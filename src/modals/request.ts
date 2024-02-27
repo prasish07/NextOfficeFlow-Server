@@ -16,11 +16,13 @@ export interface ILeave extends mongoose.Document {
 	startDate: Date;
 	endDate: Date;
 	reason: string;
+	status: string;
 }
 
 export interface IAllowance extends mongoose.Document {
 	amount: number;
 	reason: string;
+	date: Date;
 }
 
 export interface IOvertime extends mongoose.Document {
@@ -55,11 +57,13 @@ const leaveSchema = new mongoose.Schema({
 	startDate: { type: Date, required: true },
 	endDate: { type: Date, required: true },
 	reason: { type: String, required: true },
+	status: { type: String, default: "Unknown" },
 });
 
 const allowanceSchema = new mongoose.Schema({
 	amount: { type: Number, required: true },
 	reason: { type: String, required: false },
+	date: { type: Date, required: true },
 });
 
 const overtimeSchema = new mongoose.Schema({

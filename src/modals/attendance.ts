@@ -9,8 +9,11 @@ export interface IAttendance extends mongoose.Document {
 	location: string;
 	lat: number;
 	lng: number;
-	late: boolean;
+	checkInStatus: string;
+	checkOutStatus: string;
 	overtime: boolean;
+	reason: string;
+	status: string;
 }
 
 const attendanceSchema = new mongoose.Schema({
@@ -18,12 +21,15 @@ const attendanceSchema = new mongoose.Schema({
 	date: { type: Date, required: true },
 	checkIn: { type: Date },
 	checkOut: { type: Date },
-	type: { type: String, enum: ["onsite", "remote"], required: true },
-	location: { type: String, required: true },
+	type: { type: String, enum: ["onsite", "remote"] },
+	location: { type: String },
 	lat: { type: Number },
 	lng: { type: Number },
-	late: { type: Boolean },
+	checkInStatus: { type: String },
+	checkOutStatus: { type: String },
 	overtime: { type: Boolean },
+	reason: { type: String },
+	status: { type: String, enum: ["present", "absent"] },
 });
 
 const Attendance = mongoose.model<IAttendance>("Attendance", attendanceSchema);

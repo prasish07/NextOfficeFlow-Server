@@ -12,13 +12,22 @@ export interface IEmployee extends mongoose.Document {
 	salary: number;
 	startDate: Date;
 	endDate: Date;
-	UserId: string;
+	userId: string;
 	from: string;
 	to: string;
 	status: string;
 	jobDescription: string;
 	educationDocument: string[];
 	NormalDocument: string[];
+}
+
+export interface ILeaveDetail extends mongoose.Document {
+	userId: string;
+	availableLeaves: number;
+	leavesTaken: number;
+	year: number;
+	totalPaidLeave: number;
+	totalUnpaidLeaveTaken: number;
 }
 
 const employeeSchema = new mongoose.Schema({
@@ -48,6 +57,23 @@ const employeeSchema = new mongoose.Schema({
 	],
 });
 
+const leaveDetailSchema = new mongoose.Schema({
+	userId: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "User",
+	},
+	totalPaidLeave: { type: Number },
+	availableLeaves: { type: Number },
+	leavesTaken: { type: Number },
+	year: { type: Number },
+	totalUnpaidLeaveTaken: { type: Number },
+});
+
 const Employee = mongoose.model<IEmployee>("Employee", employeeSchema);
+
+export const LeaveDetail = mongoose.model<ILeaveDetail>(
+	"LeaveDetail",
+	leaveDetailSchema
+);
 
 export default Employee;
