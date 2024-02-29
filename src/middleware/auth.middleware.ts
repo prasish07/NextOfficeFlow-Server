@@ -32,10 +32,14 @@ export const validateToken = async (
 		const payload = verifyToken(token) as userProps;
 
 		(req as CustomerRequestInterface).user = payload;
-		console.log("hello");
 		next();
-	} catch (error) {
-		console.log(error);
+	} catch (error: any) {
+		if (error.name === "TokenExpiredError") {
+			return next(
+				new customAPIErrors("Token has expired", StatusCodes.UNAUTHORIZED)
+			);
+		}
+		return next(new customAPIErrors("Invalid token", StatusCodes.UNAUTHORIZED));
 	}
 };
 

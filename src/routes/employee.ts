@@ -9,6 +9,9 @@ import {
 	deleteEmployee,
 	getAllEmployees,
 	getEmployee,
+	getUserInformation,
+	getAllUserWithEmployeeRole,
+	getEmployeeByUserId,
 } from "../controllers/employee.controller";
 
 const router = Router();
@@ -17,6 +20,14 @@ router
 	.route("/employee")
 	.post(validateToken, authorizePermission("HR", "admin"), createEmployee)
 	.get(getAllEmployees);
+
+router.route("/employee/me").get(validateToken, getEmployeeByUserId);
+
+router
+	.route("/user/information/:userId")
+	.get(validateToken, getUserInformation);
+
+router.route("/employee/all").get(validateToken, getAllUserWithEmployeeRole);
 
 router
 	.route("/employee/:employeeId")

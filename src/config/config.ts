@@ -13,6 +13,8 @@ const JWT_LIFETIME = process.env.JWT_LIFETIME;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const GOOGLE_REDIRECT = process.env.GOOGLE_REDIRECT;
+const email = process.env.email;
+const password = process.env.password;
 
 export const config = {
 	mongo: {
@@ -29,5 +31,10 @@ export const config = {
 		clientId: CLIENT_ID,
 		clientSecret: CLIENT_SECRET,
 		redirect: GOOGLE_REDIRECT,
+	},
+	email,
+	password,
+	leaveDetails: {
+		availableLeaves: 12,
 	},
 };

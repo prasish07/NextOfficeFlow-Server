@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
 import customAPIErrors from "../errors/customError";
-import Project from "../modals/project";
+import Project, { IProject } from "../modals/project";
 import Comment from "../modals/comment";
 import Attachment from "../modals/attachment";
 import { config } from "../config/config";
@@ -9,57 +9,29 @@ import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
 
 export const createProject = async (req: Request, res: Response) => {
-	const {
-		title,
-		Description,
-		startDate,
-		endDate,
-		AssigneeId,
-		Progress,
-		status,
-	} = req.body;
+	const body = req.body;
 
 	const user = (req as CustomerRequestInterface).user;
 	const UserId = user.userId;
 
-	if (
-		!title ||
-		!Description ||
-		!startDate ||
-		!endDate ||
-		!AssigneeId ||
-		!UserId ||
-		!Progress ||
-		!status
-	) {
-		throw new customAPIErrors(
-			"Please provide all the required fields",
-			StatusCodes.BAD_REQUEST
-		);
-	}
-
 	const project = await Project.create({
-		title,
-		Description,
-		startDate,
-		endDate,
-		AssigneeId,
+		...body,
 		UserId,
-		Progress,
-		status,
 	});
 
 	res.status(StatusCodes.CREATED).json({ project });
 };
 
 export const getProject = async (req: Request, res: Response) => {
-	const { id } = req.params;
+	const { projectId } = req.params;
 
-	const project = await Project.findById(id);
+	const project = await Project.findById(projectId)
+		.populate("AssigneeId")
+		.populate("UserId");
 
 	if (!project) {
 		throw new customAPIErrors(
-			`No project found with id: ${id}`,
+			`No project found with id: ${projectId}`,
 			StatusCodes.NOT_FOUND
 		);
 	}
@@ -68,7 +40,9 @@ export const getProject = async (req: Request, res: Response) => {
 };
 
 export const getAllProject = async (req: Request, res: Response) => {
-	const projects = await Project.find();
+	const projects = await Project.find()
+		.populate("AssigneeId")
+		.populate("UserId");
 
 	if (!projects) {
 		throw new customAPIErrors(`No project found`, StatusCodes.NOT_FOUND);
@@ -78,20 +52,20 @@ export const getAllProject = async (req: Request, res: Response) => {
 };
 
 export const updateProject = async (req: Request, res: Response) => {
-	const { id } = req.params;
+	const { projectId } = req.params;
 	const projectInfo = req.body;
 
-	if (!id) {
+	if (!projectId) {
 		throw new customAPIErrors("Project Id not found", StatusCodes.NOT_FOUND);
 	}
 
-	const project = await Project.findByIdAndUpdate(id, projectInfo, {
+	const project = await Project.findByIdAndUpdate(projectId, projectInfo, {
 		new: true,
 	});
 
 	if (!project) {
 		throw new customAPIErrors(
-			`No project found with id: ${id}`,
+			`No project found with id: ${projectId}`,
 			StatusCodes.NOT_FOUND
 		);
 	}
@@ -100,17 +74,17 @@ export const updateProject = async (req: Request, res: Response) => {
 };
 
 export const deleteProject = async (req: Request, res: Response) => {
-	const { id } = req.params;
+	const { projectId } = req.params;
 
-	if (!id) {
+	if (!projectId) {
 		throw new customAPIErrors("Project Id not found", StatusCodes.NOT_FOUND);
 	}
 
-	const project = await Project.findByIdAndDelete(id);
+	const project = await Project.findByIdAndDelete(projectId);
 
 	if (!project) {
 		throw new customAPIErrors(
-			`No project found with id: ${id}`,
+			`No project found with id: ${projectId}`,
 			StatusCodes.NOT_FOUND
 		);
 	}
@@ -118,114 +92,76 @@ export const deleteProject = async (req: Request, res: Response) => {
 	res.status(StatusCodes.OK).json({ project });
 };
 
-export const createComment = async (req: Request, res: Response) => {
-	const { comment, projectId } = req.body;
+export const getProjectStatusCount = async (req: Request, res: Response) => {
+	const projects = await Project.find();
 
-	const user = (req as CustomerRequestInterface).user;
-	const UserId = user.userId;
-
-	if (!comment || !projectId) {
-		throw new customAPIErrors(
-			"Please provide all the required fields",
-			StatusCodes.BAD_REQUEST
-		);
+	if (!projects) {
+		throw new customAPIErrors(`No project found`, StatusCodes.NOT_FOUND);
 	}
+	let toDo = 0;
+	let onGoing = 0;
+	let completed = 0;
+	let overDue = 0;
+	let cancel = 0;
+	let total = projects.length;
 
-	const commentCreate = await Comment.create({
-		comment,
-		UserId,
-		projectId,
+	projects.forEach((project) => {
+		if (project.status === "To-Do") {
+			toDo++;
+		} else if (project.status === "onGoing") {
+			onGoing++;
+		} else if (project.status === "completed") {
+			completed++;
+		} else if (project.status === "cancel") {
+			cancel++;
+		}
+		if (new Date(project.endDate) < new Date()) {
+			overDue++;
+		}
 	});
 
-	res.status(StatusCodes.CREATED).json({ commentCreate });
-};
-
-export const deleteComment = async (req: Request, res: Response) => {
-	const { id } = req.params;
-
-	if (!id) {
-		throw new customAPIErrors("Comment Id not found", StatusCodes.NOT_FOUND);
-	}
-
-	const comment = await Comment.findByIdAndDelete(id);
-
-	if (!comment) {
-		throw new customAPIErrors(
-			`No comment found with id: ${id}`,
-			StatusCodes.NOT_FOUND
-		);
-	}
-
-	res.status(StatusCodes.OK).json({ comment });
-};
-
-export const getProjectComment = async (req: Request, res: Response) => {
-	const { id } = req.params;
-
-	const comments = await Comment.find({ projectId: id });
-
-	if (!comments) {
-		throw new customAPIErrors(
-			`No comment found with id: ${id}`,
-			StatusCodes.NOT_FOUND
-		);
-	}
-
-	res.status(StatusCodes.OK).json({ comments });
-};
-
-export const createAttachment = async (req: Request, res: Response) => {
-	const { attachment, projectId } = req.body;
-
-	const user = (req as CustomerRequestInterface).user;
-	const UserId = user.userId;
-
-	if (!attachment || !projectId) {
-		throw new customAPIErrors(
-			"Please provide all the required fields",
-			StatusCodes.BAD_REQUEST
-		);
-	}
-
-	const attachmentCreate = await Attachment.create({
-		attachment,
-		UserId,
-		projectId,
+	return res.status(StatusCodes.OK).json({
+		toDo,
+		total,
+		completed,
+		onGoing,
+		overDue,
+		cancel,
 	});
-
-	res.status(StatusCodes.CREATED).json({ attachmentCreate });
 };
 
-export const deleteAttachment = async (req: Request, res: Response) => {
-	const { id } = req.params;
+export const addAssigneeToProject = async (req: Request, res: Response) => {
+	const { assigneeIds } = req.body;
 
-	if (!id) {
-		throw new customAPIErrors("Attachment Id not found", StatusCodes.NOT_FOUND);
-	}
+	const { projectId } = req.params;
 
-	const attachment = await Attachment.findByIdAndDelete(id);
+	const project = await Project.findById(projectId);
 
-	if (!attachment) {
+	if (!project) {
 		throw new customAPIErrors(
-			`No attachment found with id: ${id}`,
+			`No project found with id: ${projectId}`,
 			StatusCodes.NOT_FOUND
 		);
 	}
 
-	res.status(StatusCodes.OK).json({ attachment });
-};
+	const existingAssigneeIds = project.AssigneeId || [];
 
-export const getProjectAttachment = async (req: Request, res: Response) => {
-	const { id } = req.params;
+	// Filter out assigneeIds that already exist in the project
+	const newAssigneeIds = assigneeIds.filter(
+		(id: any) => !existingAssigneeIds.includes(id)
+	);
 
-	const attachments = await Attachment.find({ projectId: id });
-
-	if (!attachments) {
-		throw new customAPIErrors(
-			`No attachment found with id: ${id}`,
-			StatusCodes.NOT_FOUND
-		);
+	if (newAssigneeIds.length === 0) {
+		return res
+			.status(StatusCodes.OK)
+			.json({ message: "No new assignees added", project });
 	}
 
-	res.status(StatusCodes.OK).json({ attachments });
+	project.AssigneeId = [...existingAssigneeIds, ...newAssigneeIds];
+
+	await project.save();
+
+	res
+		.status(StatusCodes.OK)
+		.json({ message: "Assignees added successfully", project });
 };

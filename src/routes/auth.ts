@@ -2,8 +2,13 @@ import { Router, Request, Response } from "express";
 import {
 	getUserInfo,
 	login,
-	logout,
+	signOut,
 	register,
+	singleUserVerification,
+	changePassword,
+	forgetPassword,
+	resetPassword,
+	verifyPin,
 } from "../controllers/auth.controller";
 import { googleOauthHandler } from "../controllers/auth.controller";
 import { getGoogleOauthUrl } from "../middleware/getGoogleOauthUrl";
@@ -15,8 +20,9 @@ import {
 const router = Router();
 
 router.post("/user/login", login);
-router.post("/user/logout", validateToken, logout);
+// router.post("/user/logout", validateToken, logout);
 router.post("/user/register", register);
+router.post("/user/sign-out", validateToken, signOut);
 
 router.post("/oauth", async (req: Request, res: Response) => {
 	try {
@@ -31,5 +37,15 @@ router.post("/oauth", async (req: Request, res: Response) => {
 router.post("/oauth/google", googleOauthHandler);
 
 router.get("/user/info", validateToken, getUserInfo);
+
+router.post("/user/verification", singleUserVerification);
+
+router.post("/user/changePassword", validateToken, changePassword);
+
+router.post("/user/sentCode/resetPassword", forgetPassword);
+
+router.post("/user/resetPassword", resetPassword);
+
+router.post("/user/resetPassword/verify", verifyPin);
 
 export default router;
