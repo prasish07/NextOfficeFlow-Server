@@ -137,7 +137,8 @@ export const getRequests = async (req: Request, res: Response) => {
 		.populate("leaveId")
 		.populate("allowanceId")
 		.populate("overtimeId")
-		.populate("attendanceId");
+		.populate("attendanceId")
+		.sort({ createdAt: -1 });
 
 	requests.forEach((request) => {
 		if (request.requestType === "leave") {
@@ -282,7 +283,8 @@ export const getAllRequests = async (req: Request, res: Response) => {
 		.populate("leaveId")
 		.populate("allowanceId")
 		.populate("overtimeId")
-		.populate("attendanceId");
+		.populate("attendanceId")
+		.sort({ createdAt: -1 });
 
 	requests.forEach((request) => {
 		if (request.requestType === "leave") {

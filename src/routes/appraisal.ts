@@ -4,10 +4,8 @@ import {
 	validateToken,
 } from "../middleware/auth.middleware";
 
-import { getEmployeeProjectAndTicketMeasures } from "../controllers/appraisal";
+import { getEmployeeMeasures } from "../controllers/appraisal.controller";
 const router = Router();
 
-router
-	.route("/appraisal/measures")
-	.get(validateToken, getEmployeeProjectAndTicketMeasures);
+router.route("/appraisal/measures").get(validateToken, getEmployeeMeasures);
 export default router;
