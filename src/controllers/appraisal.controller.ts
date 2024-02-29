@@ -7,6 +7,7 @@ import Employee from "../modals/employee";
 import User from "../modals/user";
 import Attendance from "../modals/attendance";
 import { LeaveDetail } from "../modals/employee";
+import Review from "../modals/review";
 import Requests from "../modals/request";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 
@@ -207,4 +208,107 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 			attendanceDetails: result,
 		});
 	}
+};
+
+export const createReview = async (req: Request, res: Response) => {
+	const { year } = req.body;
+	let userId: string;
+	let user = (req as CustomerRequestInterface).user;
+
+	if (user.role === "employee") {
+		userId = user.userId;
+	} else {
+		userId = req.body.userId;
+		if (!userId) {
+			throw new customAPIErrors("User Id is required", StatusCodes.BAD_REQUEST);
+		}
+	}
+
+	const review = await Review.findOne({
+		userId,
+		year,
+	});
+
+	if (review) {
+		throw new customAPIErrors("Review already exists", StatusCodes.BAD_REQUEST);
+	}
+
+	const newReview = new Review({
+		...req.body,
+		userId,
+	});
+
+	await newReview.save();
+
+	return res
+		.status(StatusCodes.CREATED)
+		.json({ message: "Review created successfully" });
+};
+
+export const getReview = async (req: Request, res: Response) => {
+	const { reviewId } = req.params;
+
+	const review = await Review.findById(reviewId).populate("userId");
+
+	if (!review) {
+		throw new customAPIErrors("Review not found", StatusCodes.NOT_FOUND);
+	}
+	res.status(StatusCodes.OK).json({
+		review,
+	});
+};
+
+export const updateReview = async (req: Request, res: Response) => {
+	const { reviewId } = req.params;
+
+	const review = await Review.findByIdAndUpdate(
+		{ reviewId },
+		{ $set: req.body },
+		{ new: true }
+	);
+
+	if (!review) {
+		throw new customAPIErrors("Review not found", StatusCodes.NOT_FOUND);
+	}
+
+	res.status(StatusCodes.OK).json({
+		review,
+	});
+};
+
+export const deleteReview = async (req: Request, res: Response) => {
+	const { reviewId } = req.params;
+
+	const review = await Review.findByIdAndDelete(reviewId);
+
+	if (!review) {
+		throw new customAPIErrors("Review not found", StatusCodes.NOT_FOUND);
+	}
+
+	res.status(StatusCodes.OK).json({
+		message: "Review deleted successfully",
+	});
+};
+
+export const getAllReview = async (req: Request, res: Response) => {
+	const { userId, year } = req.query;
+	let filter: any = {};
+
+	if (userId) {
+		filter.userId = userId;
+	}
+
+	if (year) {
+		filter.year = year;
+	}
+
+	const reviews = await Review.find(filter).populate("userId");
+
+	if (!reviews) {
+		throw new customAPIErrors("Review not found", StatusCodes.NOT_FOUND);
+	}
+
+	res.status(StatusCodes.OK).json({
+		reviews,
+	});
 };
