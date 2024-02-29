@@ -16,6 +16,7 @@ export interface ITicket extends mongoose.Document {
 	spentTime: string;
 	linkedProject: string;
 	comments: string[];
+	grading: number;
 }
 
 const TicketSchema = new mongoose.Schema({
@@ -37,12 +38,19 @@ const TicketSchema = new mongoose.Schema({
 	startDate: { type: Date },
 	dueDate: { type: Date },
 	estimatedTime: { type: String },
+	grading: {
+		type: Number,
+		default: 0,
+		min: 0,
+		max: 10,
+	},
 	reporterId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
 	Progress: { type: Number },
 	spentTime: { type: String },
+
 	linkedProject: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Project",

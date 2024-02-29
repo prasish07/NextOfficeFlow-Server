@@ -45,6 +45,10 @@ export const getOneTicket = async (req: Request, res: Response) => {
 export const updateTicket = async (req: Request, res: Response) => {
 	const { ticketId } = req.params;
 	const detail = req.body;
+
+	// Removing the "grading" field from the detail object as their is a separate route for updating grading
+	delete detail.grading;
+
 	const ticket = await Ticket.findByIdAndUpdate(ticketId, detail, {
 		new: true,
 		runValidators: true,
@@ -71,4 +75,28 @@ export const getProjectTickets = async (req: Request, res: Response) => {
 		.populate("reporterId")
 		.populate("assigneeId");
 	res.status(StatusCodes.OK).json({ tickets });
+};
+
+export const updateGrading = async (req: Request, res: Response) => {
+	const { ticketId } = req.params;
+	const { grading } = req.body;
+	const user = (req as CustomerRequestInterface).user;
+	if (user.role === "employee") {
+		throw new customAPIErrors(
+			"You are not allowed to grade",
+			StatusCodes.FORBIDDEN
+		);
+	}
+	const ticket = await Ticket.findByIdAndUpdate(
+		ticketId,
+		{ grading },
+		{
+			new: true,
+			runValidators: true,
+		}
+	);
+	if (!ticket) {
+		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
+	}
+	res.status(StatusCodes.OK).json({ message: "Grading updated successfully" });
 };

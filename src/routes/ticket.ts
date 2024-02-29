@@ -15,16 +15,32 @@ const router = Router();
 
 router
 	.route("/ticket")
-	.post(validateToken, authorizePermission("employee", "admin"), createTicket)
-	.get(getTickets);
+	.post(
+		validateToken,
+		authorizePermission("project manager", "admin"),
+		createTicket
+	)
+	.get(
+		validateToken,
+		authorizePermission("project manager", "admin", "employee"),
+		getTickets
+	);
 
 router
 	.route("/ticket/:ticketId")
-	.get(validateToken, authorizePermission("employee", "admin"), getOneTicket)
-	.patch(validateToken, authorizePermission("employee", "admin"), updateTicket)
+	.get(
+		validateToken,
+		authorizePermission("employee", "admin", "project manager"),
+		getOneTicket
+	)
+	.patch(
+		validateToken,
+		authorizePermission("employee", "admin", "project manager"),
+		updateTicket
+	)
 	.delete(
 		validateToken,
-		authorizePermission("employee", "admin"),
+		authorizePermission("project manager", "admin"),
 		deleteTicket
 	);
 

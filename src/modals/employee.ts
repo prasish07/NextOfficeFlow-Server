@@ -17,8 +17,7 @@ export interface IEmployee extends mongoose.Document {
 	to: string;
 	status: string;
 	jobDescription: string;
-	educationDocument: string[];
-	NormalDocument: string[];
+	documents: string[];
 }
 
 export interface ILeaveDetail extends mongoose.Document {

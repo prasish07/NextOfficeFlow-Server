@@ -19,14 +19,22 @@ const router = Router();
 
 router
 	.route("/project")
-	.post(validateToken, authorizePermission("employee", "admin"), createProject)
-	.get(getAllProject);
+	.post(
+		validateToken,
+		authorizePermission("project manager", "admin"),
+		createProject
+	)
+	.get(
+		validateToken,
+		authorizePermission("project manager", "admin", "employee"),
+		getAllProject
+	);
 
 router
 	.route("/project/counts")
 	.get(
 		validateToken,
-		authorizePermission("employee", "admin"),
+		authorizePermission("employee", "admin", "project manager"),
 		getProjectStatusCount
 	);
 
@@ -34,17 +42,25 @@ router
 	.route("/project/:projectId/addAssignee")
 	.post(
 		validateToken,
-		authorizePermission("employee", "admin"),
+		authorizePermission("project manager", "admin"),
 		addAssigneeToProject
 	);
 
 router
 	.route("/project/:projectId")
-	.get(validateToken, authorizePermission("employee", "admin"), getProject)
-	.patch(validateToken, authorizePermission("employee", "admin"), updateProject)
+	.get(
+		validateToken,
+		authorizePermission("employee", "admin", "project manager"),
+		getProject
+	)
+	.patch(
+		validateToken,
+		authorizePermission("project manager", "admin"),
+		updateProject
+	)
 	.delete(
 		validateToken,
-		authorizePermission("employee", "admin"),
+		authorizePermission("project manager", "admin"),
 		deleteProject
 	);
 
@@ -52,7 +68,7 @@ router
 	.route("/project/:projectId/tickets")
 	.get(
 		validateToken,
-		authorizePermission("employee", "admin"),
+		authorizePermission("employee", "admin", "project manager"),
 		getProjectTickets
 	);
 

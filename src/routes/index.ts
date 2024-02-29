@@ -7,6 +7,7 @@ import attachment from "./attachment";
 import attendance from "./attendance";
 import request from "./request";
 import CalendarEvent from "./calander";
+import Appraisal from "./appraisal";
 
 import { Router } from "express";
 
@@ -21,5 +22,6 @@ router.use(attachment);
 router.use(attendance);
 router.use(request);
 router.use(CalendarEvent);
+router.use(Appraisal);
 
 export default router;
