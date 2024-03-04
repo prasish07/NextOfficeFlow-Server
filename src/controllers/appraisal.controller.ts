@@ -10,9 +10,10 @@ import { LeaveDetail } from "../modals/employee";
 import Review from "../modals/review";
 import Requests from "../modals/request";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
+import Appraisal from "../modals/appraisal";
 
 export const getEmployeeMeasures = async (req: Request, res: Response) => {
-	let { userId, type, year } = req.body;
+	let { userId, type, year } = req.query;
 
 	let filter: any = {};
 
@@ -33,19 +34,24 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 		let ticketList: any = [];
 
 		await Promise.all(
-			projectCount.map(async (project) => {
+			projectCount.map(async (project: any) => {
 				totalProject++;
 				if (project.status === "completed") {
 					completedProject++;
 				}
-				if (project.status === "overdue") {
+				if (
+					project.endDate < new Date() &&
+					project.status !== "completed" &&
+					project.status !== "cancelled"
+				) {
 					overdueProject++;
 				}
 				if (project.status === "cancelled") {
 					cancelledProject++;
 				}
+				console.log(project._id, userId);
 				const ticketCount = await Ticket.find({
-					projectId: project._id,
+					linkedProject: project._id,
 					assigneeId: userId,
 				});
 
@@ -55,7 +61,11 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 						if (ticket.status === "completed") {
 							completedTicketInProject++;
 						}
-						if (ticket.status === "overdue") {
+						if (
+							ticket.dueDate < new Date() &&
+							ticket.status !== "completed" &&
+							ticket.status !== "cancelled"
+						) {
 							overdueTicketInProject++;
 						}
 						if (ticket.status === "cancelled") {
@@ -104,7 +114,11 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 				if (ticket.status === "completed") {
 					completedTicket++;
 				}
-				if (ticket.status === "overdue") {
+				if (
+					ticket.dueDate < new Date() &&
+					ticket.status !== "completed" &&
+					ticket.status !== "cancelled"
+				) {
 					overdueTicket++;
 				}
 				if (ticket.status === "cancelled") {
@@ -142,8 +156,8 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 			filter = {
 				userId,
 				date: {
-					$gte: new Date(year, 0, 1),
-					$lt: new Date(year + 1, 0, 1),
+					$gte: new Date(+year, 0, 1),
+					$lt: new Date(+year + 1, 0, 1),
 				},
 			};
 		} else {
@@ -174,6 +188,14 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 			).length;
 		};
 
+		const calculateTotalLateDays = (month: number) => {
+			return attendanceDetails.filter(
+				(entry) =>
+					entry.checkInStatus === "late" &&
+					new Date(entry.date).getMonth() === month
+			).length;
+		};
+
 		let result = [];
 		let month = 0;
 
@@ -183,11 +205,12 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 			month = currentDate.getMonth();
 		}
 
-		for (let i = 0; i <= month; i++) {
+		for (let i = 0; i <= month - 1; i++) {
 			let present = calculateTotalDaysWithStatus("present", i);
 			let absent = calculateTotalDaysWithStatus("absent", i);
 			let remote = calculateTotalDaysWithType("remote", i);
 			let onsite = calculateTotalDaysWithType("onsite", i);
+			let late = calculateTotalLateDays(i);
 			let total = present + absent;
 
 			result.push({
@@ -197,6 +220,7 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 				remote,
 				onsite,
 				total,
+				late,
 				monthAttendance: new Date(2000, i, 1).toLocaleString("en-US", {
 					month: "long",
 				}),
@@ -310,5 +334,175 @@ export const getAllReview = async (req: Request, res: Response) => {
 
 	res.status(StatusCodes.OK).json({
 		reviews,
+	});
+};
+
+export const promote = async (req: Request, res: Response) => {
+	const { userId } = req.params;
+
+	const { newPosition, newSalary, feedback } = req.body;
+
+	const employee = await Employee.findOne({ userId });
+
+	if (!employee) {
+		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
+	}
+
+	employee.position = newPosition;
+	employee.salary = newSalary;
+
+	await employee.save();
+
+	const newAppraisal = new Appraisal({
+		date: new Date(),
+		userId,
+		type: "promotion",
+		feedback,
+		newPosition,
+		newSalary,
+	});
+
+	await newAppraisal.save();
+
+	res.status(StatusCodes.OK).json({
+		message: "Employee promoted successfully",
+	});
+};
+
+export const increaseSalary = async (req: Request, res: Response) => {
+	const { userId } = req.params;
+
+	const { newSalary, feedback } = req.body;
+
+	const employee = await Employee.findOne({ userId });
+
+	if (!employee) {
+		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
+	}
+
+	employee.salary = newSalary;
+
+	await employee.save();
+
+	const newAppraisal = new Appraisal({
+		date: new Date(),
+		userId,
+		type: "salary increase",
+		feedback,
+		newSalary,
+	});
+
+	await newAppraisal.save();
+
+	res.status(StatusCodes.OK).json({
+		message: "Salary increased successfully",
+	});
+};
+
+export const feedback = async (req: Request, res: Response) => {
+	const { userId } = req.params;
+
+	const { feedback } = req.body;
+
+	const newAppraisal = new Appraisal({
+		date: new Date(),
+		userId,
+		type: "feedback",
+		feedback,
+	});
+
+	await newAppraisal.save();
+
+	res.status(StatusCodes.OK).json({
+		message: "Feedback added successfully",
+	});
+};
+
+export const getAllAppraisalHistory = async (req: Request, res: Response) => {
+	let { userId, year } = req.query;
+	let filter: any = {};
+
+	if (!userId) return [];
+
+	if (userId) {
+		filter.userId = userId;
+	}
+	console.log(filter);
+
+	if (year) {
+		filter.date = {
+			$gte: new Date(+year, 0, 1),
+			$lt: new Date(+year + 1, 0, 1),
+		};
+	}
+
+	const appraisal = await Appraisal.find(filter).sort({ date: -1 });
+
+	if (!appraisal) {
+		return [];
+	}
+
+	const appraisalHistory = await Promise.all(
+		appraisal.map(async (element) => {
+			const user = await Employee.findOne({ userId: element.userId });
+
+			const data = {
+				employeeName: user?.name,
+				employeePosition: user?.position,
+				...element.toJSON(),
+			};
+			return data;
+		})
+	);
+
+	res.status(StatusCodes.OK).json({
+		appraisalHistory,
+	});
+};
+
+export const getMyAppraisalHistory = async (req: Request, res: Response) => {
+	const user = (req as CustomerRequestInterface).user;
+	let filter: any;
+
+	const appraisal = await Appraisal.find({ userId: user.userId }).sort({
+		date: -1,
+	});
+
+	if (!appraisal) {
+		throw new customAPIErrors(
+			"Appraisal history not found",
+			StatusCodes.NOT_FOUND
+		);
+	}
+
+	const appraisalHistory = await Promise.all(
+		appraisal.map(async (element) => {
+			const user = await Employee.findOne({ userId: element.userId });
+
+			const data = {
+				employeeName: user?.name,
+				employeePosition: user?.position,
+				...element.toJSON(),
+			};
+			return data;
+		})
+	);
+
+	res.status(StatusCodes.OK).json({
+		appraisalHistory,
+	});
+};
+
+export const getAppraisal = async (req: Request, res: Response) => {
+	const { appraisalId } = req.params;
+
+	const appraisal = await Appraisal.findById(appraisalId);
+
+	if (!appraisal) {
+		throw new customAPIErrors("Appraisal not found", StatusCodes.NOT_FOUND);
+	}
+
+	res.status(StatusCodes.OK).json({
+		appraisal,
 	});
 };

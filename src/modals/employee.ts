@@ -25,7 +25,7 @@ export interface ILeaveDetail extends mongoose.Document {
 	availableLeaves: number;
 	leavesTaken: number;
 	year: number;
-	totalPaidLeave: number;
+	totalPaidLeaveTaken: number;
 	totalUnpaidLeaveTaken: number;
 }
 
@@ -61,7 +61,7 @@ const leaveDetailSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
-	totalPaidLeave: { type: Number },
+	totalPaidLeaveTaken: { type: Number },
 	availableLeaves: { type: Number },
 	leavesTaken: { type: Number },
 	year: { type: Number },

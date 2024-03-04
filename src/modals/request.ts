@@ -9,6 +9,8 @@ export interface IRequest extends mongoose.Document {
 	leaveId: string;
 	allowanceId: string;
 	overtimeId: string;
+	attendanceId: string;
+	requestedTo: string;
 }
 
 export interface ILeave extends mongoose.Document {
@@ -43,6 +45,7 @@ const requestSchema = new mongoose.Schema({
 	status: { type: String, required: true, default: "pending" },
 	createdAt: { type: Date, default: Date.now },
 	updatedAt: { type: Date, default: Date.now },
+	requestedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 	leaveId: { type: mongoose.Schema.Types.ObjectId, ref: "Leave" },
 	allowanceId: { type: mongoose.Schema.Types.ObjectId, ref: "Allowance" },
 	overtimeId: { type: mongoose.Schema.Types.ObjectId, ref: "Overtime" },
@@ -50,7 +53,6 @@ const requestSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "AttendanceRequest",
 	},
-	
 });
 
 const leaveSchema = new mongoose.Schema({

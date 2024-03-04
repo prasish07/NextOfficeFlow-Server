@@ -30,7 +30,7 @@ type EmployeeDocument = Document & employeeProps;
 const createLeaveDetails = async (userId: string) => {
 	const leaveDetail = new LeaveDetail({
 		userId,
-		totalPaidLeave: config.leaveDetails.availableLeaves,
+		totalPaidLeaveTaken: 0,
 		availableLeaves: config.leaveDetails.availableLeaves,
 		leavesTaken: 0,
 		totalUnpaidLeaveTaken: 0,
@@ -244,7 +244,11 @@ export const getAllUserWithEmployeeRole = async (
 	req: Request,
 	res: Response
 ) => {
-	const users = await User.find({ role: "employee" });
+	let { role } = req.query;
+	if (!role) {
+		role = "employee";
+	}
+	const users = await User.find({ role });
 	if (!users.length) {
 		throw new customAPIErrors("No user found", StatusCodes.NOT_FOUND);
 	}

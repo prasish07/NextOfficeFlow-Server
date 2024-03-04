@@ -17,9 +17,10 @@ export const createRequest = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
 	const { requestType } = req.body;
 	let request;
+	console.log(req.body);
 
 	if (requestType === "leave") {
-		const { startDate, endDate, reason, type } = req.body;
+		const { startDate, endDate, reason, type, requestedTo } = req.body;
 		const leave = new Leave({
 			type,
 			startDate,
@@ -31,6 +32,7 @@ export const createRequest = async (req: Request, res: Response) => {
 			userId: user.userId,
 			requestType,
 			leaveId: leave._id,
+			requestedTo,
 		});
 	}
 	if (requestType === "allowance") {
@@ -323,6 +325,90 @@ export const getAllRequests = async (req: Request, res: Response) => {
 		allowanceRequest,
 		overtimeRequest,
 		attendanceRequest,
+	});
+};
+
+export const getPMRequestedRequest = async (req: Request, res: Response) => {
+	// Extract filters from the query parameters
+	const user = (req as CustomerRequestInterface).user;
+
+	const { date, status, type } = req.query;
+	let leaveRequest = 0;
+	let overtimeRequest = 0;
+
+	// Build the filter criteria
+	const filter: any = {};
+	filter.requestedTo = user.userId;
+
+	if (date) {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+
+		if (date === "today") {
+			filter.date = today;
+		} else if (date === "yesterday") {
+			const yesterday = new Date(today);
+			yesterday.setDate(today.getDate() - 1);
+			filter.date = yesterday;
+		} else if (date === "thisWeek") {
+			const firstDayOfWeek = new Date(today);
+			firstDayOfWeek.setDate(today.getDate() - today.getDay());
+			filter.date = { $gte: firstDayOfWeek, $lt: today };
+		} else if (date === "thisMonth") {
+			const firstDayOfMonth = new Date(
+				today.getFullYear(),
+				today.getMonth(),
+				1
+			);
+			filter.date = { $gte: firstDayOfMonth, $lt: today };
+		} else {
+			filter.date = new Date(date as string);
+		}
+	}
+
+	if (status) {
+		filter.status = status;
+	}
+
+	if (type) {
+		filter.type = type;
+	}
+
+	// Use the filter criteria to fetch requests
+	const requests = await Requests.find(filter)
+		.populate("leaveId")
+		.populate("overtimeId")
+		.sort({ createdAt: -1 });
+
+	requests.forEach((request) => {
+		if (request.requestType === "leave") {
+			leaveRequest++;
+		}
+		if (request.requestType === "overtime") {
+			overtimeRequest++;
+		}
+	});
+
+	// Fetch employee information for each request's userId
+	const requestsData = await Promise.all(
+		requests.map(async (request) => {
+			const employee = await Employee.findOne({ userId: request.userId });
+
+			// Modify the request object to include employee information
+			const modifiedRequest = {
+				employeeName: employee ? employee.name : "Unknown",
+				employeePosition: employee ? employee.position : "Unknown",
+				...request.toJSON(),
+			};
+
+			return modifiedRequest;
+		})
+	);
+
+	return res.status(StatusCodes.OK).json({
+		requests: requestsData,
+		leaveRequest,
+		overtimeRequest,
 	});
 };
 
