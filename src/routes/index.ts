@@ -8,6 +8,7 @@ import attendance from "./attendance";
 import request from "./request";
 import CalendarEvent from "./calander";
 import Appraisal from "./appraisal";
+import Announcement from "./announcement";
 
 import { Router } from "express";
 
@@ -23,5 +24,6 @@ router.use(attendance);
 router.use(request);
 router.use(CalendarEvent);
 router.use(Appraisal);
+router.use(Announcement);
 
 export default router;
