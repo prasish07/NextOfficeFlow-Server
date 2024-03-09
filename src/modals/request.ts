@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 export interface IRequest extends mongoose.Document {
 	userId: string;
 	requestType: string;
-	status: string;
 	createdAt: Date;
 	updatedAt: Date;
 	leaveId: string;
@@ -11,6 +10,8 @@ export interface IRequest extends mongoose.Document {
 	overtimeId: string;
 	attendanceId: string;
 	requestedTo: string;
+	pmStatus: string;
+	status: string;
 }
 
 export interface ILeave extends mongoose.Document {
@@ -42,7 +43,8 @@ export interface IAttendance extends mongoose.Document {
 const requestSchema = new mongoose.Schema({
 	userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 	requestType: { type: String, required: true },
-	status: { type: String, required: true, default: "pending" },
+	pmStatus: { type: String, default: "pending" },
+	status: { type: String, default: "pending" },
 	createdAt: { type: Date, default: Date.now },
 	updatedAt: { type: Date, default: Date.now },
 	requestedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

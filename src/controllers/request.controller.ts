@@ -188,7 +188,8 @@ export const getRequest = async (req: Request, res: Response) => {
 		.populate("leaveId")
 		.populate("allowanceId")
 		.populate("overtimeId")
-		.populate("attendanceId");
+		.populate("attendanceId")
+		.populate("requestedTo");
 
 	if (!request) {
 		throw new customAPIErrors(
@@ -204,16 +205,13 @@ export const getRequest = async (req: Request, res: Response) => {
 
 export const updateRequest = async (req: Request, res: Response) => {
 	const { requestId } = req.params;
-	const { status } = req.body;
-	const request = await Requests.findById(requestId);
+	const request = await Requests.findByIdAndUpdate(requestId, req.body);
 	if (!request) {
 		throw new customAPIErrors(
 			`Request with id ${requestId} not found`,
 			StatusCodes.NOT_FOUND
 		);
 	}
-	request.status = status;
-	await request.save();
 	return res.status(StatusCodes.OK).json({
 		message: "Request updated successfully",
 		request,
@@ -242,6 +240,8 @@ export const getAllRequests = async (req: Request, res: Response) => {
 	let allowanceRequest = 0;
 	let overtimeRequest = 0;
 	let attendanceRequest = 0;
+
+	const { userId, role } = (req as CustomerRequestInterface).user;
 
 	// Build the filter criteria
 	const filter: any = {};
@@ -288,7 +288,18 @@ export const getAllRequests = async (req: Request, res: Response) => {
 		.populate("attendanceId")
 		.sort({ createdAt: -1 });
 
-	requests.forEach((request) => {
+	const filteredRequests = requests.filter((request) => {
+		if (
+			(request.requestType === "leave" && request.pmStatus === "approved") ||
+			(request.requestType === "overtime" && request.pmStatus === "approved") ||
+			request.requestType === "allowance" ||
+			request.requestType === "attendance"
+		) {
+			return true;
+		}
+	});
+
+	filteredRequests.forEach((request) => {
 		if (request.requestType === "leave") {
 			leaveRequest++;
 		}
@@ -305,7 +316,7 @@ export const getAllRequests = async (req: Request, res: Response) => {
 
 	// Fetch employee information for each request's userId
 	const requestsData = await Promise.all(
-		requests.map(async (request) => {
+		filteredRequests.map(async (request) => {
 			const employee = await Employee.findOne({ userId: request.userId });
 
 			// Modify the request object to include employee information
