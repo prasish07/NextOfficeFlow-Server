@@ -4,6 +4,7 @@ import customAPIErrors from "../errors/customError";
 import User from "../modals/user";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import Announcement from "../modals/announcement";
+import Employee from "../modals/employee";
 
 export const createAnnouncement = async (req: Request, res: Response) => {
 	const { userId } = (req as CustomerRequestInterface).user;
@@ -26,7 +27,27 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 };
 
 export const getAllAnnouncements = async (req: Request, res: Response) => {
-	const announcements = await Announcement.find().sort({ date: -1 });
+	const { date, endDate } = req.query;
+	const filter: any = {};
+	console.log(req.query);
+
+	if (date && endDate) {
+		filter.date = { $gte: date, $lte: endDate };
+	}
+
+	const allAnnouncements = await Announcement.find(filter).sort({ date: -1 });
+
+	const announcements = await Promise.all(
+		allAnnouncements.map(async (announcement) => {
+			const employee = await Employee.findOne({ userId: announcement.userId });
+
+			return {
+				...announcement.toJSON(),
+				employeeName: employee?.name,
+				employeePosition: employee?.position,
+			};
+		})
+	);
 
 	res.status(StatusCodes.OK).json({ announcements });
 };
