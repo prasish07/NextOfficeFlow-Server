@@ -5,25 +5,47 @@ import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
 import CalendarEvent from "../modals/calender";
+import Notification from "../modals/notification";
 
 export const createEvent = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
 	const { title, description, start, end, type } = req.body;
-	const event = new CalendarEvent({
-		title,
-		description,
-		start,
-		end,
-		type,
-		createdBy: user.userId,
-	});
+	try {
+		const event = new CalendarEvent({
+			title,
+			description,
+			start,
+			end,
+			type,
+			createdBy: user.userId,
+		});
 
-	await event.save();
+		await event.save();
 
-	return res.status(StatusCodes.CREATED).json({
-		message: "Event created successfully",
-		event,
-	});
+		// Create a notification for all the user about this event
+		const users = await User.find({});
+
+		users.map((user) => {
+			const notification = new Notification({
+				userId: user._id,
+				message: `Event created: ${title}`,
+				link: `/calendar`,
+				type: "event",
+				createdAt: new Date(),
+			});
+			notification.save();
+		});
+
+		return res.status(StatusCodes.CREATED).json({
+			message: "Event created successfully",
+			event,
+		});
+	} catch (error) {
+		console.error("Error creating event:", error);
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+			error: "Internal Server Error",
+		});
+	}
 };
 
 export const getEvents = async (req: Request, res: Response) => {

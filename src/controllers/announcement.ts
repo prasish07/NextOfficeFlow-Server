@@ -5,6 +5,8 @@ import User from "../modals/user";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import Announcement from "../modals/announcement";
 import Employee from "../modals/employee";
+import { sentEmail } from "../utils/mailTransporter";
+import CalendarEvent from "../modals/calender";
 
 export const createAnnouncement = async (req: Request, res: Response) => {
 	const { userId } = (req as CustomerRequestInterface).user;
@@ -20,6 +22,31 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 	});
 
 	await announcement.save();
+
+	// Add event if req.body.addToCalender is yes
+	// Add event to calender
+	if (req.body.addToCalender === "yes") {
+		const event = new CalendarEvent({
+			userId,
+			title: req.body.title,
+			type: "announcement",
+			start: req.body.date,
+			end: req.body.endDate,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		});
+
+		await event.save();
+		console.log("Event added to calender");
+	}
+
+	// sent mail to every one
+	const employees = await Employee.find().populate("userId");
+	employees.forEach((employee: any) => {
+		console.log(employee.userId?.email, "Email sent");
+		if (employee.userId.email)
+			sentEmail(employee.userId.email, req.body.content, req.body.title);
+	});
 
 	res
 		.status(StatusCodes.CREATED)
