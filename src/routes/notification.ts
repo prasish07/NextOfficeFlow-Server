@@ -4,10 +4,16 @@ import {
 	validateToken,
 } from "../middleware/auth.middleware";
 
-import { getNotifications } from "../controllers/notification.controller";
+import {
+	getNotificationUnreadCount,
+	getNotifications,
+} from "../controllers/notification.controller";
 
 const router = Router();
 
 router.route("/notifications").get(validateToken, getNotifications);
+router
+	.route("/notifications/count")
+	.get(validateToken, getNotificationUnreadCount);
 
 export default router;

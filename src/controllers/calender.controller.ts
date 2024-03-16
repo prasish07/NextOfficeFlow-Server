@@ -6,6 +6,8 @@ import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
 import CalendarEvent from "../modals/calender";
 import Notification from "../modals/notification";
+import { createNotificationAll } from "../utils/notification.helper";
+import { dateFormatter } from "../utils/helper";
 
 export const createEvent = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
@@ -23,17 +25,12 @@ export const createEvent = async (req: Request, res: Response) => {
 		await event.save();
 
 		// Create a notification for all the user about this event
-		const users = await User.find({});
-
-		users.map((user) => {
-			const notification = new Notification({
-				userId: user._id,
-				message: `Event created: ${title}`,
-				link: `/calendar`,
-				type: "event",
-				createdAt: new Date(),
-			});
-			notification.save();
+		createNotificationAll({
+			message: `New event created: <strong>${title}</strong> on ${dateFormatter(
+				start
+			)} to ${dateFormatter(end)}`,
+			link: `/calendar`,
+			type: "event",
 		});
 
 		return res.status(StatusCodes.CREATED).json({
