@@ -11,6 +11,7 @@ import Review from "../modals/review";
 import Requests from "../modals/request";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import Appraisal from "../modals/appraisal";
+import { createNotification } from "../utils/notification.helper";
 
 export const getEmployeeMeasures = async (req: Request, res: Response) => {
 	let { userId, type, year } = req.query;
@@ -364,6 +365,13 @@ export const promote = async (req: Request, res: Response) => {
 
 	await newAppraisal.save();
 
+	createNotification({
+		message: `You have been promoted to ${newPosition}`,
+		userId,
+		type: "employee",
+		link: `/appraisal/history`,
+	});
+
 	res.status(StatusCodes.OK).json({
 		message: "Employee promoted successfully",
 	});
@@ -394,6 +402,13 @@ export const increaseSalary = async (req: Request, res: Response) => {
 
 	await newAppraisal.save();
 
+	createNotification({
+		message: `Your salary has been increased to ${newSalary}`,
+		userId,
+		type: "employee",
+		link: `/appraisal/history`,
+	});
+
 	res.status(StatusCodes.OK).json({
 		message: "Salary increased successfully",
 	});
@@ -412,6 +427,13 @@ export const feedback = async (req: Request, res: Response) => {
 	});
 
 	await newAppraisal.save();
+
+	createNotification({
+		message: `You have a new feedback`,
+		userId,
+		type: "employee",
+		link: `/appraisal/history`,
+	});
 
 	res.status(StatusCodes.OK).json({
 		message: "Feedback added successfully",

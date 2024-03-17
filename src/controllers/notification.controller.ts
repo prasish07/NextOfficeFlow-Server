@@ -30,3 +30,31 @@ export const getNotificationUnreadCount = async (
 	}).countDocuments();
 	return res.status(StatusCodes.OK).json({ count });
 };
+
+export const updateSeen = async (req: Request, res: Response) => {
+	const { notificationId } = req.params;
+	const user = (req as CustomerRequestInterface).user;
+
+	const updateNotification = await Notification.findByIdAndUpdate(
+		notificationId,
+		{ isSeen: true },
+		{ new: true }
+	);
+
+	if (!updateNotification) {
+		throw new customAPIErrors("Notification not found", StatusCodes.NOT_FOUND);
+	}
+
+	res.status(StatusCodes.OK).json({ message: "Notification updated" });
+};
+
+export const markAllAsRead = async (req: Request, res: Response) => {
+	const user = (req as CustomerRequestInterface).user;
+
+	const updateNotification = await Notification.updateMany(
+		{ userId: user.userId, isSeen: false },
+		req.body
+	);
+
+	res.status(StatusCodes.OK).json({ message: "All notifications updated" });
+};

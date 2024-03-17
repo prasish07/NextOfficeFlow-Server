@@ -6,6 +6,10 @@ import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
 import { hashPassword } from "../utils/auth.helper";
+import {
+	createNotification,
+	createNotificationByRole,
+} from "../utils/notification.helper";
 
 export type employeeProps = {
 	name: string;
@@ -126,6 +130,20 @@ export const createEmployee = async (req: Request, res: Response) => {
 
 	await createLeaveDetails(userEmployee._id);
 
+	createNotificationByRole({
+		message: `New employee added: <strong>${name}</strong>`,
+		role: "admin",
+		link: "/employee",
+		type: "employee",
+	});
+
+	createNotification({
+		message: `Welcome to NextOfficeFlow: <strong>${name}</strong>`,
+		link: "/employee/my-profile",
+		type: "employee",
+		userId: updatedEmployee.userId,
+	});
+
 	res.status(StatusCodes.CREATED).json({
 		message: "Employee created successfully",
 		data: updatedEmployee,
@@ -165,6 +183,22 @@ export const updateEmployee = async (req: Request, res: Response) => {
 	if (!employeeUpdate || !userUpdate) {
 		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
 	}
+
+	// create notification for admin and hr about employee update
+	createNotificationByRole({
+		message: `Employee updated: <strong>${employeeUpdate.name}</strong>`,
+		role: "admin",
+		link: "/employee",
+		type: "employee",
+	});
+
+	createNotificationByRole({
+		message: `Employee updated: <strong>${employeeUpdate.name}</strong>`,
+		role: "HR",
+		link: "/employee",
+		type: "employee",
+	});
+
 	res.status(StatusCodes.OK).json({
 		message: "Employee updated successfully",
 		data: employeeUpdate,
@@ -178,7 +212,7 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 		throw new customAPIErrors("Employee Id not found", StatusCodes.NOT_FOUND);
 	}
 
-	const employeeDelete: any = await Employee.findByIdAndDelete(employeeId);
+	const employeeDelete = await Employee.findByIdAndRemove(employeeId);
 
 	if (!employeeDelete) {
 		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
@@ -189,6 +223,20 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 	if (!userDelete) {
 		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
 	}
+
+	createNotificationByRole({
+		message: `Employee remove: <strong>${employeeDelete.name}</strong>`,
+		role: "admin",
+		link: "/employee",
+		type: "employee",
+	});
+
+	createNotificationByRole({
+		message: `Employee remove: <strong>${employeeDelete.name}</strong>`,
+		role: "HR",
+		link: "/employee",
+		type: "employee",
+	});
 
 	res.status(StatusCodes.OK).json({
 		message: "Employee deleted successfully",
@@ -304,4 +352,11 @@ export const createLeaveDetailEveryYear = async () => {
 			}
 		})
 	);
+
+	createNotification({
+		message: `Leave details Updated for year: <strong>${currentYear}</strong>`,
+		link: "/leave",
+		type: "leave",
+		userId: "",
+	});
 };

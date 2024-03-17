@@ -12,6 +12,10 @@ import Requests, {
 	Allowance,
 	Overtime,
 } from "../modals/request";
+import {
+	createNotification,
+	createNotificationByRole,
+} from "../utils/notification.helper";
 
 export const createRequest = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
@@ -80,6 +84,35 @@ export const createRequest = async (req: Request, res: Response) => {
 		throw new customAPIErrors("Invalid request type", StatusCodes.BAD_REQUEST);
 	}
 	await request.save();
+
+	// Sent notification about the request to the requestedTo user
+	const requestedUser = await Employee.findOne({
+		userId: user.userId,
+	});
+
+	if (req.body.requestedTo) {
+		createNotification({
+			message: `You have a new request from ${requestedUser?.name}`,
+			link: `/requests`,
+			type: "request",
+			userId: request?.requestedTo,
+		});
+	} else {
+		createNotification({
+			message: `You have a new request from ${requestedUser?.name}`,
+			link: `/request/all`,
+			type: "request",
+			role: "admin",
+		});
+
+		createNotification({
+			message: `You have a new request from ${requestedUser?.name}`,
+			link: `/request/all`,
+			type: "request",
+			role: "HR",
+		});
+	}
+
 	return res.status(StatusCodes.CREATED).json({
 		message: "Request created successfully",
 		request,
@@ -212,6 +245,29 @@ export const updateRequest = async (req: Request, res: Response) => {
 			StatusCodes.NOT_FOUND
 		);
 	}
+
+	if (
+		request.requestedTo &&
+		request.pmStatus === "approved" &&
+		request.status === "pending"
+	) {
+		createNotificationByRole({
+			message: `You have a new request`,
+			role: "HR",
+			link: `/requests`,
+			type: "request",
+		});
+	}
+
+	if (req.body.status === "approved") {
+		createNotification({
+			message: `Your request has been approved`,
+			link: `/requests`,
+			type: "request",
+			userId: request.userId,
+		});
+	}
+
 	return res.status(StatusCodes.OK).json({
 		message: "Request updated successfully",
 		request,

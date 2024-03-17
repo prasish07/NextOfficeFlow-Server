@@ -86,6 +86,13 @@ export const updateEvent = async (req: Request, res: Response) => {
 		);
 	}
 
+	// Create a notification for all the user about this event
+	createNotificationAll({
+		message: `Event updated: <strong>${updateEvent.title}</strong>`,
+		link: `/calendar`,
+		type: "event",
+	});
+
 	return res.status(StatusCodes.OK).json({
 		message: "Event updated successfully",
 		updateEvent,
@@ -101,6 +108,14 @@ export const deleteEvent = async (req: Request, res: Response) => {
 			StatusCodes.NOT_FOUND
 		);
 	}
+
+	// Create a notification for all the user about this event
+	createNotificationAll({
+		message: `Event deleted: <strong>${event.title}</strong>`,
+		link: `/calendar`,
+		type: "event",
+	});
+
 	return res.status(StatusCodes.OK).json({
 		message: "Event deleted successfully",
 	});

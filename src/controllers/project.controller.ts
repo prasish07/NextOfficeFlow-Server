@@ -7,6 +7,11 @@ import Attachment from "../modals/attachment";
 import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
+import {
+	createNotification,
+	createNotificationByRole,
+} from "../utils/notification.helper";
+import Employee from "../modals/employee";
 
 export const createProject = async (req: Request, res: Response) => {
 	const body = req.body;
@@ -17,6 +22,34 @@ export const createProject = async (req: Request, res: Response) => {
 	const project = await Project.create({
 		...body,
 		UserId,
+	});
+
+	// create notification for all project managers
+	createNotificationByRole({
+		message: `New project was created with title ${project.title}`,
+		role: "project manager",
+		link: `/project/${project._id}`,
+		type: "project",
+	});
+
+	// create notification for all admin
+	createNotification({
+		message: `New project was created with title ${project.title}`,
+		role: "admin",
+		link: `/project/${project._id}`,
+		type: "project",
+	});
+
+	// create notification for all assignees
+	const assignees = project.AssigneeId || [];
+	assignees.forEach((assigneeId: any) => {
+		createNotification({
+			message: `You have been assigned to a new project with title ${project.title}`,
+			role: "assignee",
+			link: `/project/${project._id}`,
+			type: "project",
+			userId: assigneeId,
+		});
 	});
 
 	res.status(StatusCodes.CREATED).json({ project });
@@ -61,7 +94,7 @@ export const updateProject = async (req: Request, res: Response) => {
 
 	const project = await Project.findByIdAndUpdate(projectId, projectInfo, {
 		new: true,
-	});
+	}).populate("UserId");
 
 	if (!project) {
 		throw new customAPIErrors(
@@ -69,6 +102,30 @@ export const updateProject = async (req: Request, res: Response) => {
 			StatusCodes.NOT_FOUND
 		);
 	}
+
+	const PMName = await Employee.findOne({ userId: project.UserId });
+
+	// create notification for all project managers
+	createNotificationByRole({
+		message: `Project with title ${project.title} was updated by ${PMName}`,
+		role: "admin",
+		link: `/project/${project._id}`,
+		type: "project",
+	});
+
+	// create notification for assignes and userid
+	const users = project.AssigneeId || [];
+	users.push(project.UserId);
+
+	users.forEach((userId: any) => {
+		createNotification({
+			message: `Project with title ${project.title} was updated by ${PMName}`,
+			role: "assignee",
+			link: `/project/${project._id}`,
+			type: "project",
+			userId: userId,
+		});
+	});
 
 	res.status(StatusCodes.OK).json({ project });
 };
@@ -80,7 +137,7 @@ export const deleteProject = async (req: Request, res: Response) => {
 		throw new customAPIErrors("Project Id not found", StatusCodes.NOT_FOUND);
 	}
 
-	const project = await Project.findByIdAndDelete(projectId);
+	const project = await Project.findByIdAndRemove(projectId);
 
 	if (!project) {
 		throw new customAPIErrors(
@@ -88,6 +145,18 @@ export const deleteProject = async (req: Request, res: Response) => {
 			StatusCodes.NOT_FOUND
 		);
 	}
+
+	const comments = await Comment.deleteMany({ projectId });
+
+	const attachments = await Attachment.deleteMany({ projectId });
+
+	// create notification for all project managers
+	createNotificationByRole({
+		message: `Project: ${projectId} was deleted`,
+		role: "admin",
+		link: `/project`,
+		type: "project",
+	});
 
 	res.status(StatusCodes.OK).json({ project });
 };
@@ -160,6 +229,17 @@ export const addAssigneeToProject = async (req: Request, res: Response) => {
 	project.AssigneeId = [...existingAssigneeIds, ...newAssigneeIds];
 
 	await project.save();
+
+	// create notification for all new assignees
+	newAssigneeIds.forEach((assigneeId: any) => {
+		createNotification({
+			message: `You have been assigned to a new project with title ${project.title}`,
+			role: "assignee",
+			link: `/project/${project._id}`,
+			type: "project",
+			userId: assigneeId,
+		});
+	});
 
 	res
 		.status(StatusCodes.OK)

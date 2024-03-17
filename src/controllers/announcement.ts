@@ -7,6 +7,11 @@ import Announcement from "../modals/announcement";
 import Employee from "../modals/employee";
 import { sentEmail } from "../utils/mailTransporter";
 import CalendarEvent from "../modals/calender";
+import {
+	createNotification,
+	createNotificationAll,
+} from "../utils/notification.helper";
+import { dateFormatter } from "../utils/helper";
 
 export const createAnnouncement = async (req: Request, res: Response) => {
 	const { userId } = (req as CustomerRequestInterface).user;
@@ -23,8 +28,6 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 
 	await announcement.save();
 
-	// Add event if req.body.addToCalender is yes
-	// Add event to calender
 	if (req.body.addToCalender === "yes") {
 		const event = new CalendarEvent({
 			userId,
@@ -39,6 +42,15 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 		await event.save();
 		console.log("Event added to calender");
 	}
+
+	// sent notification to everyone
+	createNotificationAll({
+		message: `New announcement created: <strong>${
+			req.body.title
+		}</strong> on ${dateFormatter(req.body.date)}`,
+		link: `/announcement`,
+		type: "announcement",
+	});
 
 	// sent mail to every one
 	const employees = await Employee.find().populate("userId");
@@ -106,6 +118,13 @@ export const updateAnnouncement = async (req: Request, res: Response) => {
 
 	await announcement.save();
 
+	// sent notification to everyone
+	createNotificationAll({
+		message: `Announcement updated: <strong>${req.body.title}</strong>`,
+		link: `/announcement`,
+		type: "announcement",
+	});
+
 	res
 		.status(StatusCodes.OK)
 		.json({ message: "Announcement updated successfully" });
@@ -119,6 +138,13 @@ export const deleteAnnouncement = async (req: Request, res: Response) => {
 	if (!announcement) {
 		throw new customAPIErrors("Announcement not found", StatusCodes.NOT_FOUND);
 	}
+
+	// sent notification to everyone
+	createNotificationAll({
+		message: `Announcement deleted: <strong>${announcement.title}</strong>`,
+		link: `/announcement`,
+		type: "announcement",
+	});
 
 	res
 		.status(StatusCodes.OK)

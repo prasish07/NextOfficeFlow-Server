@@ -7,6 +7,7 @@ import User from "../modals/user";
 import Attendance from "../modals/attendance";
 import mongoose from "mongoose";
 import Employee from "../modals/employee";
+import { createNotification } from "../utils/notification.helper";
 
 export const checkIn = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
@@ -310,6 +311,14 @@ export const markAbsentEmployeesForToday = async () => {
 					});
 
 					await attendance.save();
+
+					// Send a notification to the employee
+					createNotification({
+						message: `You have been marked as absent for today. Please contact your manager if this is a mistake.`,
+						link: `/employee/my-profile`,
+						type: "attendance",
+						userId: employee.userId,
+					});
 				}
 			})
 		);
