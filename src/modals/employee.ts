@@ -7,7 +7,6 @@ export interface IEmployee extends mongoose.Document {
 	team: string;
 	manager: string;
 	description: string;
-	githubUsername: string;
 	appraisalHistory: string[];
 	salary: number;
 	startDate: Date;
@@ -36,7 +35,6 @@ const employeeSchema = new mongoose.Schema({
 	team: { type: String },
 	manager: { type: String },
 	description: { type: String },
-	githubUsername: { type: String },
 	appraisalHistory: { type: Array },
 	salary: { type: Number, required: true },
 	startDate: { type: Date, required: true },

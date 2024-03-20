@@ -93,11 +93,19 @@ export const getAllAnnouncements = async (req: Request, res: Response) => {
 
 export const getAnnouncement = async (req: Request, res: Response) => {
 	const { announcementId } = req.params;
-	const announcement = await Announcement.findById(announcementId);
+	const data = await Announcement.findById(announcementId);
 
-	if (!announcement) {
+	if (!data) {
 		throw new customAPIErrors("Announcement not found", StatusCodes.NOT_FOUND);
 	}
+
+	const employee = await Employee.findOne({ userId: data.userId });
+
+	const announcement = {
+		...data.toJSON(),
+		employeeName: employee?.name,
+		employeePosition: employee?.position,
+	};
 
 	res.status(StatusCodes.OK).json({ announcement });
 };

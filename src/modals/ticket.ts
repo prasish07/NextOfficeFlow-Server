@@ -4,7 +4,7 @@ export interface ITicket extends mongoose.Document {
 	title: string;
 	status: string;
 	type: string;
-	Description: string;
+	description: string;
 	attachments: string[];
 	assigneeId: string;
 	priority: string;
@@ -12,18 +12,18 @@ export interface ITicket extends mongoose.Document {
 	dueDate: Date;
 	estimatedTime: string;
 	reporterId: string;
-	Progress: number;
+	progress: number;
 	spentTime: string;
 	linkedProject: string;
 	comments: string[];
-	grading: number;
+	grade: number;
 }
 
 const TicketSchema = new mongoose.Schema({
 	title: { type: String, required: true },
 	status: { type: String, required: true, default: "To Do" },
 	type: { type: String },
-	Description: { type: String },
+	description: { type: String },
 	attachments: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
@@ -38,7 +38,7 @@ const TicketSchema = new mongoose.Schema({
 	startDate: { type: Date },
 	dueDate: { type: Date },
 	estimatedTime: { type: String },
-	grading: {
+	grade: {
 		type: Number,
 		default: 0,
 		min: 0,
@@ -48,7 +48,7 @@ const TicketSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
-	Progress: { type: Number },
+	progress: { type: Number },
 	spentTime: { type: String },
 
 	linkedProject: {

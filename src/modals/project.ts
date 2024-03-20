@@ -2,14 +2,15 @@ import mongoose from "mongoose";
 
 export interface IProject extends mongoose.Document {
 	title: string;
-	Description: string;
+	description: string;
 	startDate: Date;
 	endDate: Date;
-	AssigneeId: string[];
-	UserId: string;
-	Progress: number;
+	assigneeId: string[];
+	userId: string;
+	progress: number;
 	status: string;
 	estimatedTime: string;
+	githubRepo: string;
 }
 
 const projectSchema = new mongoose.Schema({
@@ -30,6 +31,7 @@ const projectSchema = new mongoose.Schema({
 	Progress: { type: Number },
 	status: { type: String, default: "To-Do" },
 	estimatedTime: { type: String },
+	githubRepo: { type: String },
 });
 
 const Project = mongoose.model<IProject>("Project", projectSchema);
