@@ -41,7 +41,7 @@ export const createProject = async (req: Request, res: Response) => {
 	});
 
 	// create notification for all assignees
-	const assignees = project.AssigneeId || [];
+	const assignees = project.assigneeId || [];
 	assignees.forEach((assigneeId: any) => {
 		createNotification({
 			message: `You have been assigned to a new project with title ${project.title}`,
@@ -59,7 +59,7 @@ export const getProject = async (req: Request, res: Response) => {
 	const { projectId } = req.params;
 
 	const project = await Project.findById(projectId)
-		.populate("AssigneeId")
+		.populate("assigneeId")
 		.populate("UserId");
 
 	if (!project) {
@@ -74,8 +74,8 @@ export const getProject = async (req: Request, res: Response) => {
 
 export const getAllProject = async (req: Request, res: Response) => {
 	const projects = await Project.find()
-		.populate("AssigneeId")
-		.populate("UserId");
+		.populate("assigneeId")
+		.populate("userId");
 
 	if (!projects) {
 		throw new customAPIErrors(`No project found`, StatusCodes.NOT_FOUND);
@@ -103,7 +103,7 @@ export const updateProject = async (req: Request, res: Response) => {
 		);
 	}
 
-	const PMName = await Employee.findOne({ userId: project.UserId });
+	const PMName = await Employee.findOne({ userId: project.userId });
 
 	// create notification for all project managers
 	createNotificationByRole({
@@ -114,8 +114,8 @@ export const updateProject = async (req: Request, res: Response) => {
 	});
 
 	// create notification for assignes and userid
-	const users = project.AssigneeId || [];
-	users.push(project.UserId);
+	const users = project.assigneeId || [];
+	users.push(project.userId);
 
 	users.forEach((userId: any) => {
 		createNotification({
@@ -213,7 +213,7 @@ export const addAssigneeToProject = async (req: Request, res: Response) => {
 		);
 	}
 
-	const existingAssigneeIds = project.AssigneeId || [];
+	const existingAssigneeIds = project.assigneeId || [];
 
 	// Filter out assigneeIds that already exist in the project
 	const newAssigneeIds = assigneeIds.filter(
@@ -226,7 +226,7 @@ export const addAssigneeToProject = async (req: Request, res: Response) => {
 			.json({ message: "No new assignees added", project });
 	}
 
-	project.AssigneeId = [...existingAssigneeIds, ...newAssigneeIds];
+	project.assigneeId = [...existingAssigneeIds, ...newAssigneeIds];
 
 	await project.save();
 

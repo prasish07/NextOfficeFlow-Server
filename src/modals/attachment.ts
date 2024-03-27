@@ -12,14 +12,6 @@ const attachmentSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
-	projectId: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: "Project",
-	},
-	ticketId: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: "Ticket",
-	},
 });
 
 const Attachment = mongoose.model<IAttachment>("Attachment", attachmentSchema);

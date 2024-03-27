@@ -50,7 +50,6 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 				if (project.status === "cancelled") {
 					cancelledProject++;
 				}
-				console.log(project._id, userId);
 				const ticketCount = await Ticket.find({
 					linkedProject: project._id,
 					assigneeId: userId,
@@ -449,7 +448,6 @@ export const getAllAppraisalHistory = async (req: Request, res: Response) => {
 	if (userId) {
 		filter.userId = userId;
 	}
-	console.log(filter);
 
 	if (year) {
 		filter.date = {

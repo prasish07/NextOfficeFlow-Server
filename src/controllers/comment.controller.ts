@@ -56,13 +56,6 @@ export const getProjectComment = async (req: Request, res: Response) => {
 		"UserId"
 	);
 
-	if (!comments) {
-		throw new customAPIErrors(
-			`No comment found with id: ${projectId}`,
-			StatusCodes.NOT_FOUND
-		);
-	}
-
 	res.status(StatusCodes.OK).json({ comments });
 };
 
@@ -70,13 +63,6 @@ export const getTicketComment = async (req: Request, res: Response) => {
 	const { ticketId } = req.params;
 
 	const comments = await Comment.find({ ticketId: ticketId });
-
-	if (!comments) {
-		throw new customAPIErrors(
-			`No comment found with id: ${ticketId}`,
-			StatusCodes.NOT_FOUND
-		);
-	}
 
 	res.status(StatusCodes.OK).json({ comments });
 };

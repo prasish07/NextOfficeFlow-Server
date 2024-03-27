@@ -55,13 +55,6 @@ export const getProjectAttachment = async (req: Request, res: Response) => {
 
 	const attachments = await Attachment.find({ projectId }).populate("UserId");
 
-	if (!attachments) {
-		throw new customAPIErrors(
-			`No attachment found with id: ${projectId}`,
-			StatusCodes.NOT_FOUND
-		);
-	}
-
 	res.status(StatusCodes.OK).json({ attachments });
 };
 
@@ -69,13 +62,6 @@ export const getTicketAttachment = async (req: Request, res: Response) => {
 	const { ticketId } = req.params;
 
 	const attachments = await Attachment.find({ ticketId });
-
-	if (!attachments) {
-		throw new customAPIErrors(
-			`No attachment found with id: ${ticketId}`,
-			StatusCodes.NOT_FOUND
-		);
-	}
 
 	return res.status(StatusCodes.OK).json({ attachments });
 };

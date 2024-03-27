@@ -21,7 +21,6 @@ export const createRequest = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
 	const { requestType } = req.body;
 	let request;
-	console.log(req.body);
 
 	if (requestType === "leave") {
 		const { startDate, endDate, reason, type, requestedTo } = req.body;

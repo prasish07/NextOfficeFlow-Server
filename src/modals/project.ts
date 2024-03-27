@@ -15,20 +15,20 @@ export interface IProject extends mongoose.Document {
 
 const projectSchema = new mongoose.Schema({
 	title: { type: String, required: true },
-	Description: { type: String, required: true },
+	description: { type: String, required: true },
 	startDate: { type: Date, required: true },
 	endDate: { type: Date, required: true },
-	AssigneeId: [
+	assigneeId: [
 		{
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "User",
 		},
 	],
-	UserId: {
+	userId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
-	Progress: { type: Number },
+	progress: { type: Number },
 	status: { type: String, default: "To-Do" },
 	estimatedTime: { type: String },
 	githubRepo: { type: String },

@@ -40,7 +40,6 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 		});
 
 		await event.save();
-		console.log("Event added to calender");
 	}
 
 	// sent notification to everyone
@@ -55,7 +54,6 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 	// sent mail to every one
 	const employees = await Employee.find().populate("userId");
 	employees.forEach((employee: any) => {
-		console.log(employee.userId?.email, "Email sent");
 		if (employee.userId.email)
 			sentEmail(employee.userId.email, req.body.content, req.body.title);
 	});
@@ -68,7 +66,6 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 export const getAllAnnouncements = async (req: Request, res: Response) => {
 	const { date, endDate } = req.query;
 	const filter: any = {};
-	console.log(req.query);
 
 	if (date && endDate) {
 		filter.date = { $gte: date, $lte: endDate };

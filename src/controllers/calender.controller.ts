@@ -124,7 +124,6 @@ export const deleteEvent = async (req: Request, res: Response) => {
 export const getAllEvents = async (req: Request, res: Response) => {
 	const { start, end } = req.query;
 
-	console.log(req.query);
 
 	let filter: any = {};
 

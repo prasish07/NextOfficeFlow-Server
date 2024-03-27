@@ -13,6 +13,22 @@ import { createNotification } from "../utils/notification.helper";
 export const createTicket = async (req: Request, res: Response) => {
 	const detail = req.body;
 	const user = (req as CustomerRequestInterface).user;
+	const { attachments } = detail;
+	console.log(detail);
+	if (attachments) {
+		const attachmentIds = await Promise.all(
+			attachments.map(async (attachment: any) => {
+				const newAttachment = new Attachment({
+					attachment,
+					userId: user.userId,
+				});
+				await newAttachment.save();
+				return newAttachment._id;
+			})
+		);
+		detail.attachments = attachmentIds;
+	}
+	console.log("detail", detail);
 
 	const ticket = new Ticket({
 		reporterId: user.userId,
@@ -30,13 +46,21 @@ export const createTicket = async (req: Request, res: Response) => {
 		});
 
 	res.status(StatusCodes.CREATED).json({
-		message: "Project created successfully",
+		message: "Ticket created successfully",
 		ticket,
 	});
 };
 
 export const getTickets = async (req: Request, res: Response) => {
-	const tickets = await Ticket.find()
+	const { assigneeToOnly, linkedProjectsOnly } = req.query;
+	let filter: any = {};
+	if (assigneeToOnly) {
+		filter.assigneeId = assigneeToOnly;
+	}
+	if (linkedProjectsOnly) {
+		filter.linkedProjects = linkedProjectsOnly;
+	}
+	const tickets = await Ticket.find(filter)
 		.populate("reporterId")
 		.populate("assigneeId");
 	res.status(StatusCodes.OK).json({ tickets });
@@ -46,7 +70,8 @@ export const getOneTicket = async (req: Request, res: Response) => {
 	const { ticketId } = req.params;
 	const ticket = await Ticket.findById(ticketId)
 		.populate("reporterId")
-		.populate("assigneeId");
+		.populate("assigneeId")
+		.populate("attachments");
 	if (!ticket) {
 		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
 	}

@@ -9,8 +9,27 @@ export const errorHandler = (
 	next: NextFunction
 ) => {
 	console.log(err);
-	if (err instanceof customeAPIErrors) {
-		return res.status(err.statusCode).json({ message: err.message });
+
+	if (err.name === "CastError") {
+		return res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
+	}
+
+	// Handling Mongoose Validation Errors
+	if (err.name === "ValidationError") {
+		const errors: { [key: string]: string } = {};
+		let firstErrorMessage: string | null = null;
+		for (let field in err.errors) {
+			errors[field] = err.errors[field].message;
+
+			if (!firstErrorMessage) {
+				if (err.errors[field].kind.includes("ObjectId"))
+					firstErrorMessage = `Invalid ${field}`;
+				else firstErrorMessage = `${err.errors[field].message}`;
+			}
+		}
+		return res
+			.status(StatusCodes.BAD_REQUEST)
+			.json({ message: firstErrorMessage, errors });
 	}
 
 	res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
