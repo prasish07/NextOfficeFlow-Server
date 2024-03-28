@@ -11,6 +11,7 @@ export interface IProject extends mongoose.Document {
 	status: string;
 	estimatedTime: string;
 	githubRepo: string;
+	attachments: string[];
 }
 
 const projectSchema = new mongoose.Schema({
@@ -32,6 +33,7 @@ const projectSchema = new mongoose.Schema({
 	status: { type: String, default: "To-Do" },
 	estimatedTime: { type: String },
 	githubRepo: { type: String },
+	attachments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Attachment" }],
 });
 
 const Project = mongoose.model<IProject>("Project", projectSchema);

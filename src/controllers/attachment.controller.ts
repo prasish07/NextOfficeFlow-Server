@@ -11,7 +11,6 @@ import Ticket from "../modals/ticket";
 
 export const createAttachment = async (req: Request, res: Response) => {
 	const body = req.body;
-	const { projectId, ticketId } = req.body;
 
 	const user = (req as CustomerRequestInterface).user;
 	const UserId = user.userId;

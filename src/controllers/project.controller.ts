@@ -60,7 +60,13 @@ export const getProject = async (req: Request, res: Response) => {
 
 	const project = await Project.findById(projectId)
 		.populate("assigneeId")
-		.populate("UserId");
+		.populate("userId")
+		.populate({
+			path: "attachments",
+			populate: {
+				path: "userId",
+			},
+		});
 
 	if (!project) {
 		throw new customAPIErrors(
@@ -244,4 +250,40 @@ export const addAssigneeToProject = async (req: Request, res: Response) => {
 	res
 		.status(StatusCodes.OK)
 		.json({ message: "Assignees added successfully", project });
+};
+
+export const addAttachmentToProject = async (req: Request, res: Response) => {
+	const { attachments, projectId } = req.body;
+
+	if (!projectId || !attachments) {
+		throw new customAPIErrors(
+			"Please provide attachment and projectId",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	const project = await Project.findById(projectId);
+	const { userId } = (req as CustomerRequestInterface).user;
+
+	if (!project) {
+		throw new customAPIErrors(
+			`No project found with id: ${projectId}`,
+			StatusCodes.NOT_FOUND
+		);
+	}
+	await Promise.all(
+		attachments.map(async (attachment: any) => {
+			const attachmentCreate = await Attachment.create({
+				projectId,
+				attachment,
+				userId,
+			});
+
+			project.attachments = [...project.attachments, attachmentCreate._id];
+		})
+	);
+
+	await project.save();
+
+	res.status(StatusCodes.CREATED).json({ project });
 };

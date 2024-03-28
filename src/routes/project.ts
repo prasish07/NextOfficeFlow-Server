@@ -11,6 +11,7 @@ import {
 	getProject,
 	getProjectStatusCount,
 	addAssigneeToProject,
+	addAttachmentToProject,
 } from "../controllers/project.controller";
 
 import { getProjectTickets } from "../controllers/ticket.controller";
@@ -70,6 +71,14 @@ router
 		validateToken,
 		authorizePermission("employee", "admin", "project manager"),
 		getProjectTickets
+	);
+
+router
+	.route("/project/attachment")
+	.post(
+		validateToken,
+		authorizePermission("employee", "project manager", "admin"),
+		addAttachmentToProject
 	);
 
 export default router;
