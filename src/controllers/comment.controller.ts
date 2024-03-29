@@ -53,7 +53,7 @@ export const getProjectComment = async (req: Request, res: Response) => {
 	const { projectId } = req.params;
 
 	const comments = await Comment.find({ projectId: projectId }).populate(
-		"UserId"
+		"userId"
 	);
 
 	res.status(StatusCodes.OK).json({ comments });

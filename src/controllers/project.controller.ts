@@ -100,7 +100,7 @@ export const updateProject = async (req: Request, res: Response) => {
 
 	const project = await Project.findByIdAndUpdate(projectId, projectInfo, {
 		new: true,
-	}).populate("UserId");
+	}).populate("userId");
 
 	if (!project) {
 		throw new customAPIErrors(

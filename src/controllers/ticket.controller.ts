@@ -14,7 +14,6 @@ export const createTicket = async (req: Request, res: Response) => {
 	const detail = req.body;
 	const user = (req as CustomerRequestInterface).user;
 	const { attachments } = detail;
-	console.log(detail);
 	if (attachments) {
 		const attachmentIds = await Promise.all(
 			attachments.map(async (attachment: any) => {
@@ -28,7 +27,6 @@ export const createTicket = async (req: Request, res: Response) => {
 		);
 		detail.attachments = attachmentIds;
 	}
-	console.log("detail", detail);
 
 	const ticket = new Ticket({
 		reporterId: user.userId,
@@ -71,7 +69,13 @@ export const getOneTicket = async (req: Request, res: Response) => {
 	const ticket = await Ticket.findById(ticketId)
 		.populate("reporterId")
 		.populate("assigneeId")
-		.populate("attachments");
+		.populate("attachments")
+		.populate({
+			path: "comments",
+			populate: {
+				path: "userId",
+			},
+		});
 	if (!ticket) {
 		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
 	}
@@ -81,18 +85,64 @@ export const getOneTicket = async (req: Request, res: Response) => {
 export const updateTicket = async (req: Request, res: Response) => {
 	const { ticketId } = req.params;
 	const detail = req.body;
+	const { attachments, comment } = detail;
+	const { userId } = (req as CustomerRequestInterface).user;
+	let newAttachments: any = [];
+	let newComments: any = [];
 
-	// Removing the "grading" field from the detail object as their is a separate route for updating grading
-	delete detail.grading;
-
-	const ticket = await Ticket.findByIdAndUpdate(ticketId, detail, {
-		new: true,
-		runValidators: true,
-	});
+	const ticket = await Ticket.findById(ticketId).populate("attachments");
 
 	if (!ticket) {
 		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
 	}
+
+	const notPopulateTicket = await Ticket.findById(ticketId);
+
+	if (!notPopulateTicket) {
+		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
+	}
+
+	// console.log("detail", detail);
+
+	if (attachments) {
+		const attachmentIds = await Promise.all(
+			attachments.map(async (attach: any) => {
+				// Check if attachment is already in the ticket
+				const isAttachmentExist = ticket.attachments.find((attachment: any) => {
+					return attachment.attachment === attach;
+				});
+
+				if (!isAttachmentExist) {
+					const newAttachment = new Attachment({
+						attachment: attach,
+						userId,
+					});
+					await newAttachment.save();
+					return newAttachment._id;
+				}
+			})
+		);
+		newAttachments = [...notPopulateTicket.attachments, ...attachmentIds];
+	}
+
+	if (comment) {
+		const newComment = new Comment({
+			comment,
+			userId,
+			ticketId,
+		});
+		await newComment.save();
+		newComments = [...notPopulateTicket.comments, newComment._id];
+	}
+
+	const updatedTicket = await Ticket.findByIdAndUpdate(
+		ticketId,
+		{ ...detail, attachments: newAttachments, comments: newComments },
+		{
+			new: true,
+			runValidators: true,
+		}
+	);
 
 	// create notification to reporterId
 	if (ticket.reporterId && detail.isUpdateStatus) {
