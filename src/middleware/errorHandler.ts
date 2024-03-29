@@ -8,8 +8,6 @@ export const errorHandler = (
 	res: Response,
 	next: NextFunction
 ) => {
-	console.log(err);
-
 	if (err.name === "CastError") {
 		return res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
 	}
@@ -30,6 +28,12 @@ export const errorHandler = (
 		return res
 			.status(StatusCodes.BAD_REQUEST)
 			.json({ message: firstErrorMessage, errors });
+	}
+
+	if (err instanceof customeAPIErrors) {
+		return res.status(err.statusCode).json({
+			message: err.message,
+		});
 	}
 
 	res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({

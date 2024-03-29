@@ -12,6 +12,8 @@ import {
 	createNotificationByRole,
 } from "../utils/notification.helper";
 import Employee from "../modals/employee";
+import axios from "axios";
+import { CREATE_REPO } from "../contants/conts";
 
 export const createProject = async (req: Request, res: Response) => {
 	const body = req.body;
@@ -286,4 +288,109 @@ export const addAttachmentToProject = async (req: Request, res: Response) => {
 	await project.save();
 
 	res.status(StatusCodes.CREATED).json({ project });
+};
+
+export const linkGitHub = async (req: Request, res: Response) => {
+	const { githubRepo } = req.body;
+	const { projectId } = req.params;
+
+	const regexPattern = new RegExp("/([^/]+)/?$");
+
+	const match = githubRepo.match(regexPattern);
+
+	if (!match) {
+		throw new customAPIErrors(
+			"Please provide a valid github repo with repo name in it",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	const project = await Project.findByIdAndUpdate(
+		projectId,
+		{ githubRepo: match[1] },
+		{ new: true, runValidators: true }
+	);
+
+	if (!project) {
+		throw new customAPIErrors(
+			`No project found with id: ${projectId}`,
+			StatusCodes.NOT_FOUND
+		);
+	}
+
+	// create notification for all project managers
+	createNotificationByRole({
+		message: `New GitHub link was created in project with title ${project.title}`,
+		role: "project manager",
+		link: `/project/${project._id}`,
+		type: "project",
+	});
+
+	return res
+		.status(StatusCodes.OK)
+		.json({ message: "GitHub linked successfully", project });
+};
+
+export const CreateAndLinkGitHub = async (req: Request, res: Response) => {
+	const { name, description, isPrivate, isReadme, readmeContent } = req.body;
+	const { projectId } = req.params;
+	const user = (req as CustomerRequestInterface).user;
+
+	if (!name) {
+		throw new customAPIErrors(
+			"Please provide name and description",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (!projectId) {
+		throw new customAPIErrors(
+			"Please provide projectId",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	const project = await Project.findById(projectId);
+
+	if (!project) {
+		throw new customAPIErrors(
+			`No project found with id: ${projectId}`,
+			StatusCodes.NOT_FOUND
+		);
+	}
+
+	try {
+		const createRepo = await axios.post(
+			CREATE_REPO,
+			{
+				name,
+				description,
+				private: isPrivate,
+			},
+			{
+				headers: {
+					Authorization: `token ${config.githubToken}`,
+				},
+			}
+		);
+	} catch (error: any) {
+		throw new customAPIErrors(
+			error.response.data.errors[0].message || "Error creating GitHub repo",
+			error.response.status || StatusCodes.INTERNAL_SERVER_ERROR
+		);
+	}
+
+	project.githubRepo = name;
+
+	await project.save();
+
+	// create notification for all project managers
+	createNotificationByRole({
+		message: `New GitHun link was created in project with title ${project.title}`,
+		role: "project manager",
+		link: `/project/${project._id}`,
+		type: "project",
+	});
+
+	res.send({ message: "GitHub linked successfully", project });
 };

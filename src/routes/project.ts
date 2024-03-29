@@ -12,6 +12,8 @@ import {
 	getProjectStatusCount,
 	addAssigneeToProject,
 	addAttachmentToProject,
+	linkGitHub,
+	CreateAndLinkGitHub,
 } from "../controllers/project.controller";
 
 import { getProjectTickets } from "../controllers/ticket.controller";
@@ -37,6 +39,22 @@ router
 		validateToken,
 		authorizePermission("employee", "admin", "project manager"),
 		getProjectStatusCount
+	);
+
+router
+	.route("/project/:projectId/github")
+	.patch(
+		validateToken,
+		authorizePermission("project manager", "admin"),
+		linkGitHub
+	);
+
+router
+	.route("/project/:projectId/github")
+	.put(
+		validateToken,
+		authorizePermission("project manager", "admin"),
+		CreateAndLinkGitHub
 	);
 
 router

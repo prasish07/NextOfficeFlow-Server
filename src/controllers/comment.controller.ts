@@ -12,8 +12,7 @@ import Ticket from "../modals/ticket";
 export const createComment = async (req: Request, res: Response) => {
 	const body = req.body;
 
-	const user = (req as CustomerRequestInterface).user;
-	const UserId = user.userId;
+	const { userId } = (req as CustomerRequestInterface).user;
 
 	if (!body.comment) {
 		throw new customAPIErrors(
@@ -23,7 +22,7 @@ export const createComment = async (req: Request, res: Response) => {
 	}
 
 	const commentCreate = await Comment.create({
-		UserId,
+		userId,
 		...body,
 	});
 

@@ -15,6 +15,7 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const GOOGLE_REDIRECT = process.env.GOOGLE_REDIRECT;
 const email = process.env.email;
 const password = process.env.password;
+const githubToken = process.env.GITHUB_TOKEN;
 
 export const config = {
 	mongo: {
@@ -37,4 +38,5 @@ export const config = {
 	leaveDetails: {
 		availableLeaves: 12,
 	},
+	githubToken,
 };

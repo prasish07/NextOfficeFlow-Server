@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 export interface IComment extends mongoose.Document {
 	comment: string;
-	UserId: string;
+	userId: string;
 	projectId: string;
 	// ticketId: string;
 }
