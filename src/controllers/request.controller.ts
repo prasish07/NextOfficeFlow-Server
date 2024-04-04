@@ -441,7 +441,7 @@ export const getPMRequestedRequest = async (req: Request, res: Response) => {
 	}
 
 	// Use the filter criteria to fetch requests
-	const requests = await Requests.find(filter)
+	const requests = await Requests.find()
 		.populate("leaveId")
 		.populate("overtimeId")
 		.sort({ createdAt: -1 });
