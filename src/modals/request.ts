@@ -19,7 +19,6 @@ export interface ILeave extends mongoose.Document {
 	startDate: Date;
 	endDate: Date;
 	reason: string;
-	status: string;
 }
 
 export interface IAllowance extends mongoose.Document {

@@ -51,6 +51,10 @@ router
 
 router
 	.route("/requests")
-	.get(validateToken, authorizePermission("admin", "HR"), getAllRequests);
+	.get(
+		validateToken,
+		authorizePermission("admin", "HR", "project manager"),
+		getAllRequests
+	);
 
 export default router;

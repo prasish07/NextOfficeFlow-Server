@@ -272,6 +272,32 @@ export const getAttendanceByUserIdAndToday = async (
 	});
 };
 
+export const getTodayTotalAttendance = async (req: Request, res: Response) => {
+	const today = new Date();
+	const startOfDay = new Date(
+		today.getFullYear(),
+		today.getMonth(),
+		today.getDate()
+	);
+	const endOfDay = new Date(
+		today.getFullYear(),
+		today.getMonth(),
+		today.getDate() + 1
+	);
+
+	const totalAttendance = await Attendance.countDocuments({
+		date: {
+			$gte: startOfDay,
+			$lt: endOfDay,
+		},
+		status: "present",
+	});
+
+	res.status(StatusCodes.OK).json({
+		totalAttendance,
+	});
+};
+
 export const markAbsentEmployeesForToday = async () => {
 	try {
 		const currentDay = new Date();
@@ -325,4 +351,47 @@ export const markAbsentEmployeesForToday = async () => {
 	} catch (error) {
 		console.log(error);
 	}
+};
+
+export const getTodayUnCheckedEmployees = async (
+	req: Request,
+	res: Response
+) => {
+	const currentDay = new Date();
+	const dayOfWeek = currentDay.getDay();
+
+	if (dayOfWeek === 0 || dayOfWeek === 6) {
+		console.log("It is a weekend. Skipping making absent for today");
+		return;
+	}
+
+	const employees = await Employee.find().populate("userId");
+
+	const allEmployees = employees.filter(
+		(employee: any) =>
+			employee.userId.role === "employee" ||
+			employee.userId.role === "project manager"
+	);
+
+	const uncheckedEmployees = await Promise.all(
+		allEmployees.map(async (employee) => {
+			const employeeCheckInRecord = await Attendance.findOne({
+				userId: employee.userId,
+				date: {
+					$gte: new Date(currentDay),
+					$lt: new Date(
+						new Date(currentDay).setDate(new Date(currentDay).getDate() + 1)
+					),
+				},
+			});
+
+			if (!employeeCheckInRecord) {
+				return employee;
+			}
+		})
+	);
+
+	res.status(StatusCodes.OK).json({
+		uncheckedEmployees: uncheckedEmployees.filter((employee) => employee),
+	});
 };

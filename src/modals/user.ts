@@ -4,9 +4,8 @@ export interface IUser extends mongoose.Document {
 	email: string;
 	password: string;
 	role: string;
-	token: string;
-	verificationPin: string;
 	verified: boolean;
+	verificationPin: string;
 	verificationPinExpires: Date;
 }
 
@@ -22,7 +21,6 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		default: "employee",
 	},
-	token: { type: String },
 	verificationPin: String,
 	verified: { type: Boolean, default: false },
 	verificationPinExpires: Date,

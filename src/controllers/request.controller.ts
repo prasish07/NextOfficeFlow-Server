@@ -290,7 +290,7 @@ export const deleteRequest = async (req: Request, res: Response) => {
 
 export const getAllRequests = async (req: Request, res: Response) => {
 	// Extract filters from the query parameters
-	const { date, status, type } = req.query;
+	const { date, status, type, shouldFilterPM = true } = req.query;
 	let leaveRequest = 0;
 	let allowanceRequest = 0;
 	let overtimeRequest = 0;
@@ -343,31 +343,36 @@ export const getAllRequests = async (req: Request, res: Response) => {
 		.populate("attendanceId")
 		.sort({ createdAt: -1 });
 
-	const filteredRequests = requests.filter((request) => {
-		if (
-			(request.requestType === "leave" && request.pmStatus === "approved") ||
-			(request.requestType === "overtime" && request.pmStatus === "approved") ||
-			request.requestType === "allowance" ||
-			request.requestType === "attendance"
-		) {
-			return true;
-		}
-	});
+	let filteredRequests = requests;
 
-	filteredRequests.forEach((request) => {
-		if (request.requestType === "leave") {
-			leaveRequest++;
-		}
-		if (request.requestType === "allowance") {
-			allowanceRequest++;
-		}
-		if (request.requestType === "overtime") {
-			overtimeRequest++;
-		}
-		if (request.requestType === "attendance") {
-			attendanceRequest++;
-		}
-	});
+	if (shouldFilterPM) {
+		filteredRequests = requests.filter((request) => {
+			if (
+				(request.requestType === "leave" && request.pmStatus === "approved") ||
+				(request.requestType === "overtime" &&
+					request.pmStatus === "approved") ||
+				request.requestType === "allowance" ||
+				request.requestType === "attendance"
+			) {
+				return true;
+			}
+		});
+
+		filteredRequests.forEach((request) => {
+			if (request.requestType === "leave") {
+				leaveRequest++;
+			}
+			if (request.requestType === "allowance") {
+				allowanceRequest++;
+			}
+			if (request.requestType === "overtime") {
+				overtimeRequest++;
+			}
+			if (request.requestType === "attendance") {
+				attendanceRequest++;
+			}
+		});
+	}
 
 	// Fetch employee information for each request's userId
 	const requestsData = await Promise.all(

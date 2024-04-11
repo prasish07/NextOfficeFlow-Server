@@ -81,7 +81,15 @@ export const getProject = async (req: Request, res: Response) => {
 };
 
 export const getAllProject = async (req: Request, res: Response) => {
-	const projects = await Project.find()
+	const { isMyProjects } = req.query;
+	const { userId } = (req as CustomerRequestInterface).user;
+	const filter: any = {};
+
+	if (isMyProjects) {
+		filter.userId = userId;
+	}
+
+	const projects = await Project.find(filter)
 		.populate("assigneeId")
 		.populate("userId");
 

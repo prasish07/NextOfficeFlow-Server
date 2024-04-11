@@ -443,7 +443,7 @@ export const getAllAppraisalHistory = async (req: Request, res: Response) => {
 	let { userId, year } = req.query;
 	let filter: any = {};
 
-	if (!userId) return [];
+	// if (!userId) return [];
 
 	if (userId) {
 		filter.userId = userId;

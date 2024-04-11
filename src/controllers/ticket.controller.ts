@@ -50,7 +50,10 @@ export const createTicket = async (req: Request, res: Response) => {
 };
 
 export const getTickets = async (req: Request, res: Response) => {
-	const { assigneeToOnly, linkedProjectsOnly } = req.query;
+	const { assigneeToOnly, linkedProjectsOnly, isMyTickets, status, reporter } =
+		req.query;
+	const { userId } = (req as CustomerRequestInterface).user;
+
 	let filter: any = {};
 	if (assigneeToOnly) {
 		filter.assigneeId = assigneeToOnly;
@@ -58,6 +61,22 @@ export const getTickets = async (req: Request, res: Response) => {
 	if (linkedProjectsOnly) {
 		filter.linkedProjects = linkedProjectsOnly;
 	}
+
+	if (isMyTickets) {
+		filter.assigneeId = userId;
+	}
+	if (status) {
+		filter.status = status;
+	}
+
+	if (reporter) {
+		if (reporter === "me") {
+			filter.reporterId = userId;
+		} else {
+			filter.reporterId = reporter;
+		}
+	}
+
 	const tickets = await Ticket.find(filter)
 		.populate("reporterId")
 		.populate("assigneeId");
@@ -101,8 +120,6 @@ export const updateTicket = async (req: Request, res: Response) => {
 	if (!notPopulateTicket) {
 		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
 	}
-
-	// console.log("detail", detail);
 
 	if (attachments) {
 		const attachmentIds = await Promise.all(
