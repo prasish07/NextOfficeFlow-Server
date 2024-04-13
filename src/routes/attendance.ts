@@ -16,6 +16,7 @@ import {
 	getAttendanceByUserIdAndToday,
 	getTodayTotalAttendance,
 	getTodayUnCheckedEmployees,
+	getSingleAttendance,
 } from "../controllers/attendance.controller";
 
 router
@@ -46,5 +47,9 @@ router
 router
 	.route("/attendance/today/uncheck")
 	.get(validateToken, getTodayUnCheckedEmployees);
+
+router
+	.route("/attendance/:id")
+	.get(validateToken, authorizePermission("HR", "admin"), getSingleAttendance);
 
 export default router;

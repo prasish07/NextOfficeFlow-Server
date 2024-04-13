@@ -35,7 +35,7 @@ export const checkIn = async (req: Request, res: Response) => {
 	if (existingAttendance) {
 		existingAttendance.type = type;
 		existingAttendance.location = location;
-		existingAttendance.checkIn = checkIn;
+		existingAttendance.checkIn = checkIn.toString();
 		existingAttendance.lat = lat;
 		existingAttendance.lng = lng;
 		existingAttendance.checkInStatus = status;
@@ -92,7 +92,7 @@ export const checkOut = async (req: Request, res: Response) => {
 		throw new customAPIErrors("No check-in found", StatusCodes.NOT_FOUND);
 	}
 
-	attendance.checkOut = checkOut;
+	attendance.checkOut = checkOut.toString();
 
 	const isOvertime = checkOut.getHours() >= 17;
 	const status = checkOut.getHours() < 17 ? "early" : "onTime";
@@ -143,7 +143,7 @@ export const getAllTimeAttendance = async (req: Request, res: Response) => {
 		filter.overtime = true;
 	}
 
-	const allTimeAttendance = await Attendance.find(filter);
+	const allTimeAttendance = await Attendance.find(filter).sort({ date: -1 });
 
 	const attendanceWithEmployeeData = await Promise.all(
 		allTimeAttendance.map(async (attendance) => {
@@ -163,21 +163,62 @@ export const getAllTimeAttendance = async (req: Request, res: Response) => {
 };
 
 export const manualAttendance = async (req: Request, res: Response) => {
-	const { email } = req.body;
+	const { employeeId, date, checkIn, checkOut, status, reason } = req.body.data;
 
-	const userId = await User.findOne({ email });
+	if (!employeeId) {
+		throw new customAPIErrors(
+			"Employee Id is required",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (!checkIn || !checkOut || !status) {
+		throw new customAPIErrors(
+			"Check In, Check Out and Status are required",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (!reason) {
+		throw new customAPIErrors("Reason is required", StatusCodes.BAD_REQUEST);
+	}
+
+	const userId = await User.findById(employeeId);
 
 	if (!userId) {
 		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
 	}
 
+	console.log(userId);
+
 	const attendance = new Attendance({
-		...req.body,
+		date: new Date(date),
+		checkIn,
+		checkOut,
+		status,
+		reason,
 		userId: userId._id,
 	});
 	await attendance.save();
 	res.status(StatusCodes.OK).json({
 		message: "Attendance added",
+	});
+};
+
+export const getSingleAttendance = async (req: Request, res: Response) => {
+	const { id } = req.params;
+
+	const attendance = await Attendance.findById(id);
+
+	if (!attendance) {
+		throw new customAPIErrors("Attendance not found", StatusCodes.NOT_FOUND);
+	}
+
+	const employee = await User.findById(attendance.userId);
+
+	res.status(StatusCodes.OK).json({
+		employeeEmail: employee ? employee.email : "Unknown",
+		...attendance.toJSON(),
 	});
 };
 

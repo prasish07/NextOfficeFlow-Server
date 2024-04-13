@@ -3,8 +3,8 @@ import mongoose from "mongoose";
 export interface IAttendance extends mongoose.Document {
 	userId: string;
 	date: Date;
-	checkIn: Date;
-	checkOut: Date;
+	checkIn: string;
+	checkOut: string;
 	type: string;
 	location: string;
 	lat: number;
@@ -19,8 +19,8 @@ export interface IAttendance extends mongoose.Document {
 const attendanceSchema = new mongoose.Schema({
 	userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 	date: { type: Date, required: true },
-	checkIn: { type: Date },
-	checkOut: { type: Date },
+	checkIn: { type: String },
+	checkOut: { type: String },
 	type: { type: String, enum: ["onsite", "remote"] },
 	location: { type: String },
 	lat: { type: Number },
