@@ -50,7 +50,7 @@ export const createTicket = async (req: Request, res: Response) => {
 };
 
 export const getTickets = async (req: Request, res: Response) => {
-	const { assigneeToOnly, linkedProjectsOnly, isMyTickets, status, reporter } =
+	const { assigneeToOnly, linkedProject, isMyTickets, status, reporter } =
 		req.query;
 	const { userId } = (req as CustomerRequestInterface).user;
 
@@ -58,8 +58,8 @@ export const getTickets = async (req: Request, res: Response) => {
 	if (assigneeToOnly) {
 		filter.assigneeId = assigneeToOnly;
 	}
-	if (linkedProjectsOnly) {
-		filter.linkedProjects = linkedProjectsOnly;
+	if (linkedProject) {
+		filter.linkedProject = linkedProject;
 	}
 
 	if (isMyTickets) {
@@ -211,7 +211,7 @@ export const deleteTicket = async (req: Request, res: Response) => {
 
 export const getProjectTickets = async (req: Request, res: Response) => {
 	const { projectId } = req.params;
-	const tickets = await Ticket.find({ linkedProjects: projectId })
+	const tickets = await Ticket.find({ linkedProject: projectId })
 		.populate("reporterId")
 		.populate("assigneeId");
 	res.status(StatusCodes.OK).json({ tickets });

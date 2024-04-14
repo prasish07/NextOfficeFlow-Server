@@ -8,7 +8,7 @@ import Employee from "../modals/employee";
 
 import Requests, {
 	Leave,
-	Attendance,
+	AttendanceRequest,
 	Allowance,
 	Overtime,
 } from "../modals/request";
@@ -31,18 +31,28 @@ export const createRequest = async (req: Request, res: Response) => {
 			reason,
 		});
 		await leave.save();
-		request = new Requests({
-			userId: user.userId,
-			requestType,
-			leaveId: leave._id,
-			requestedTo,
-		});
+		if (user.role == "project manager") {
+			request = new Requests({
+				userId: user.userId,
+				requestType,
+				leaveId: leave._id,
+				pmStatus: "approved",
+			});
+		} else {
+			request = new Requests({
+				userId: user.userId,
+				requestType,
+				leaveId: leave._id,
+				requestedTo,
+			});
+		}
 	}
 	if (requestType === "allowance") {
 		const { amount, reason } = req.body;
 		const allowance = new Allowance({
 			amount,
 			reason,
+			date: new Date(),
 		});
 		await allowance.save();
 		request = new Requests({
@@ -52,7 +62,7 @@ export const createRequest = async (req: Request, res: Response) => {
 		});
 	}
 	if (requestType === "overtime") {
-		const { date, startTime, endTime, reason } = req.body;
+		const { date, startTime, endTime, reason, requestedTo } = req.body;
 		const overtime = new Overtime({
 			date,
 			startTime,
@@ -60,15 +70,26 @@ export const createRequest = async (req: Request, res: Response) => {
 			reason,
 		});
 		await overtime.save();
-		request = new Requests({
-			userId: user.userId,
-			overtimeId: overtime._id,
-			requestType,
-		});
+		if (user.role == "project manager") {
+			request = new Requests({
+				userId: user.userId,
+				overtimeId: overtime._id,
+				requestType,
+				pmStatus: "approved",
+			});
+		} else {
+			request = new Requests({
+				userId: user.userId,
+				overtimeId: overtime._id,
+				requestType,
+				requestedTo,
+			});
+		}
 	}
+
 	if (requestType === "attendance") {
 		const { date, reason } = req.body;
-		const attendance = new Attendance({
+		const attendance = new AttendanceRequest({
 			date,
 			reason,
 		});

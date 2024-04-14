@@ -29,7 +29,7 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 		let cancelledTicketInProject = 0;
 
 		const projectCount = await Project.find({
-			AssigneeId: userId,
+			assigneeId: userId,
 		});
 
 		let ticketList: any = [];
@@ -340,7 +340,8 @@ export const getAllReview = async (req: Request, res: Response) => {
 export const promote = async (req: Request, res: Response) => {
 	const { userId } = req.params;
 
-	const { newPosition, newSalary, feedback } = req.body;
+	const { newPosition, newSalary, feedback, pastPosition, pastSalary } =
+		req.body;
 
 	const employee = await Employee.findOne({ userId });
 
@@ -360,6 +361,8 @@ export const promote = async (req: Request, res: Response) => {
 		feedback,
 		newPosition,
 		newSalary,
+		pastPosition,
+		pastSalary,
 	});
 
 	await newAppraisal.save();
@@ -379,7 +382,7 @@ export const promote = async (req: Request, res: Response) => {
 export const increaseSalary = async (req: Request, res: Response) => {
 	const { userId } = req.params;
 
-	const { newSalary, feedback } = req.body;
+	const { newSalary, feedback, pastSalary } = req.body;
 
 	const employee = await Employee.findOne({ userId });
 
@@ -397,6 +400,7 @@ export const increaseSalary = async (req: Request, res: Response) => {
 		type: "salary increase",
 		feedback,
 		newSalary,
+		pastSalary,
 	});
 
 	await newAppraisal.save();

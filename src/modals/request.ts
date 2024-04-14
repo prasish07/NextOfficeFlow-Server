@@ -88,7 +88,7 @@ export const Allowance = mongoose.model<IAllowance>(
 	allowanceSchema
 );
 export const Overtime = mongoose.model<IOvertime>("Overtime", overtimeSchema);
-export const Attendance = mongoose.model<IAttendance>(
+export const AttendanceRequest = mongoose.model<IAttendance>(
 	"AttendanceRequest",
 	attendanceSchema
 );
