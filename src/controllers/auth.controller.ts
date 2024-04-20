@@ -14,6 +14,7 @@ import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import { jwtDecode } from "jwt-decode";
 import { generatePin, sentEmail } from "../utils/mailTransporter";
 import axios from "axios";
+import Employee from "../modals/employee";
 
 export const login = async (req: Request, res: Response) => {
 	const { email, password } = req.body;
@@ -158,7 +159,25 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
 export const getUserInfo = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
 
-	const details = await User.findById(user.userId);
+	const details: any = await User.findById(user.userId);
+
+	if (!details) {
+		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
+	}
+
+	const employeeDetails = await Employee.findOne({ userId: user.userId });
+
+	const response = {
+		...details._doc,
+		employeeName: employeeDetails?.name,
+		employeePic: employeeDetails?.profilePicture,
+		employeePosition: employeeDetails?.position,
+		employeeId: employeeDetails?._id,
+	};
+
+	if (employeeDetails) {
+		return res.status(StatusCodes.OK).json({ response });
+	}
 
 	res.status(StatusCodes.OK).json({ details });
 };
@@ -335,36 +354,26 @@ export const verifyPin = async (req: Request, res: Response) => {
 };
 
 export const resetPassword = async (req: Request, res: Response) => {
-	const { email, newPassword } = req.body;
+	const { id, password } = req.body;
 
-	if (!email || !newPassword) {
+	if (!id || !password) {
 		throw new customAPIErrors(
 			"Please provide email and new password",
 			StatusCodes.BAD_REQUEST
 		);
 	}
 
-	const user = await User.findOne({ email });
+	const user = await User.findById(id);
 
 	if (!user) {
 		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
 	}
 
-	const EncryptedPassword = hashPassword(newPassword);
+	const EncryptedPassword = hashPassword(password);
 
-	const updateUser = await User.findOneAndUpdate(
-		{ email },
-		{
-			$set: {
-				password: EncryptedPassword,
-			},
-		},
-		{ new: true, runValidators: true }
-	);
+	user.password = EncryptedPassword;
 
-	if (!updateUser) {
-		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
-	}
+	await user.save();
 
 	res.status(StatusCodes.OK).json({ message: "Password changed successfully" });
 };

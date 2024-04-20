@@ -32,6 +32,20 @@ export const checkIn = async (req: Request, res: Response) => {
 		},
 	});
 
+	if (existingAttendance?.checkOut) {
+		throw new customAPIErrors(
+			"You can't check in after checking out",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (checkIn.getHours() >= 17) {
+		throw new customAPIErrors(
+			"You can't check in after 5 PM",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
 	if (existingAttendance) {
 		existingAttendance.type = type;
 		existingAttendance.location = location;
@@ -57,6 +71,7 @@ export const checkIn = async (req: Request, res: Response) => {
 			lng,
 			late: status,
 			status: "present",
+			checkInStatus: status,
 		});
 
 		await attendance.save();
@@ -92,6 +107,13 @@ export const checkOut = async (req: Request, res: Response) => {
 		throw new customAPIErrors("No check-in found", StatusCodes.NOT_FOUND);
 	}
 
+	if (!attendance.checkIn) {
+		throw new customAPIErrors(
+			"You have not checked in",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
 	attendance.checkOut = checkOut.toString();
 
 	const isOvertime = checkOut.getHours() >= 17;
@@ -107,32 +129,31 @@ export const checkOut = async (req: Request, res: Response) => {
 };
 
 export const getAllTimeAttendance = async (req: Request, res: Response) => {
-	const { date, late, overtime } = req.query;
+	const { startDate, endDate, late, overtime, searchEmployee } = req.query;
 
 	// Build the filter criteria
 	const filter: any = {};
 
-	if (date) {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
+	let TotalWorkingDays = 0;
+	let TotalPresent = 0;
+	let TotalAbsent = 0;
+	let TotalLate = 0;
+	let TotalOnTime = 0;
+	let TotalEarlyLeave = 0;
+	let TotalOvertime = 0;
 
-		if (date === "today") {
-			filter.date = today;
-		} else if (date === "thisWeek") {
-			const firstDayOfWeek = new Date(today);
-			firstDayOfWeek.setDate(today.getDate() - today.getDay());
-			filter.date = { $gte: firstDayOfWeek, $lt: today };
-		} else if (date === "thisMonth") {
-			const firstDayOfMonth = new Date(
-				today.getFullYear(),
-				today.getMonth(),
-				1
-			);
-			filter.date = { $gte: firstDayOfMonth, $lt: today };
-		} else if (typeof date === "string") {
-			const [from, to] = date.split("-");
-			filter.date = { $gte: new Date(from), $lt: new Date(to) };
-		}
+	if ((startDate && !endDate) || (endDate && !startDate)) {
+		throw new customAPIErrors(
+			"Both start and end date are required",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (startDate && endDate) {
+		filter.date = {
+			$gte: new Date(startDate as string),
+			$lt: new Date(endDate as string),
+		};
 	}
 
 	if (late === "true") {
@@ -143,9 +164,45 @@ export const getAllTimeAttendance = async (req: Request, res: Response) => {
 		filter.overtime = true;
 	}
 
+	const totalAttendance = await Attendance.find();
+
 	const allTimeAttendance = await Attendance.find(filter).sort({ date: -1 });
 
-	const attendanceWithEmployeeData = await Promise.all(
+	const currentDate = new Date();
+	const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
+	let totalWorkingDays = 0;
+
+	for (let d = startOfYear; d <= currentDate; d.setDate(d.getDate() + 1)) {
+		// Check if the current day is not a Saturday or Sunday
+		if (d.getDay() !== 0 && d.getDay() !== 6) {
+			totalWorkingDays++;
+		}
+	}
+
+	allTimeAttendance.map((attendance) => {
+		if (attendance.status === "present") {
+			TotalPresent++;
+		} else if (attendance.status === "absent") {
+			TotalAbsent++;
+		}
+
+		if (attendance.checkInStatus === "late") {
+			TotalLate++;
+		}
+		if (attendance.checkOutStatus === "onTime") {
+			TotalOnTime++;
+		} else if (attendance.checkOutStatus === "early") {
+			TotalEarlyLeave++;
+		}
+
+		if (attendance.overtime) {
+			TotalOvertime++;
+		}
+	});
+
+	let attendanceWithEmployeeData: any = [];
+
+	attendanceWithEmployeeData = await Promise.all(
 		allTimeAttendance.map(async (attendance) => {
 			const employee = await Employee.findOne({ userId: attendance.userId });
 
@@ -157,8 +214,23 @@ export const getAllTimeAttendance = async (req: Request, res: Response) => {
 		})
 	);
 
+	if (searchEmployee) {
+		attendanceWithEmployeeData = attendanceWithEmployeeData.filter(
+			(attendance: any) =>
+				attendance.employeeName
+					.toLowerCase()
+					.includes((searchEmployee as string).toLowerCase())
+		);
+	}
+
 	res.status(StatusCodes.OK).json({
 		allTimeAttendance: attendanceWithEmployeeData,
+		totalWorkingDays,
+		TotalPresent,
+		TotalAbsent,
+		TotalLate,
+		TotalOnTime,
+		TotalEarlyLeave,
 	});
 };
 

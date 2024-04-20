@@ -50,8 +50,14 @@ export const createTicket = async (req: Request, res: Response) => {
 };
 
 export const getTickets = async (req: Request, res: Response) => {
-	const { assigneeToOnly, linkedProject, isMyTickets, status, reporter } =
-		req.query;
+	const {
+		assigneeToOnly,
+		linkedProject,
+		isMyTickets,
+		status,
+		reporter,
+		employeeId,
+	} = req.query;
 	const { userId } = (req as CustomerRequestInterface).user;
 
 	let filter: any = {};
@@ -67,6 +73,10 @@ export const getTickets = async (req: Request, res: Response) => {
 	}
 	if (status) {
 		filter.status = status;
+	}
+
+	if (employeeId) {
+		filter.assigneeId = employeeId;
 	}
 
 	if (reporter) {
@@ -105,7 +115,7 @@ export const updateTicket = async (req: Request, res: Response) => {
 	const { ticketId } = req.params;
 	const detail = req.body;
 	const { attachments, comment } = detail;
-	const { userId } = (req as CustomerRequestInterface).user;
+	const { userId, role } = (req as CustomerRequestInterface).user;
 	let newAttachments: any = [];
 	let newComments: any = [];
 
@@ -113,6 +123,17 @@ export const updateTicket = async (req: Request, res: Response) => {
 
 	if (!ticket) {
 		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
+	}
+
+	console.log(ticket.assigneeId.toString(), userId);
+
+	if (role === "employee" && detail.status) {
+		if (ticket.assigneeId.toString() !== userId) {
+			throw new customAPIErrors(
+				"You are not allowed to change status of ticket that is not assign to you",
+				StatusCodes.FORBIDDEN
+			);
+		}
 	}
 
 	const notPopulateTicket = await Ticket.findById(ticketId);

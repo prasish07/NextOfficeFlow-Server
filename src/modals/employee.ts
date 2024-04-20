@@ -17,6 +17,7 @@ export interface IEmployee extends mongoose.Document {
 	status: string;
 	jobDescription: string;
 	documents: string[];
+	profilePicture: string;
 }
 
 export interface ILeaveDetail extends mongoose.Document {
@@ -52,6 +53,7 @@ const employeeSchema = new mongoose.Schema({
 			type: String,
 		},
 	],
+	profilePicture: { type: String },
 });
 
 const leaveDetailSchema = new mongoose.Schema({

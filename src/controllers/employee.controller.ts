@@ -294,9 +294,9 @@ export const getAllUserWithEmployeeRole = async (
 ) => {
 	let { role } = req.query;
 	if (!role) {
-		role = "employee";
+		role = ["project manager", "employee"];
 	}
-	const users = await User.find({ role });
+	const users = await User.find({ role: { $in: role } });
 	if (!users.length) {
 		throw new customAPIErrors("No user found", StatusCodes.NOT_FOUND);
 	}

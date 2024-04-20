@@ -32,7 +32,11 @@ router.route("/employee/all").get(validateToken, getAllUserWithEmployeeRole);
 router
 	.route("/employee/:employeeId")
 	.get(validateToken, getEmployee)
-	.patch(validateToken, authorizePermission("HR", "admin"), updateEmployee)
+	.patch(
+		validateToken,
+		authorizePermission("HR", "admin", "project manager", "employee"),
+		updateEmployee
+	)
 	.delete(validateToken, authorizePermission("HR", "admin"), deleteEmployee);
 
 export default router;
