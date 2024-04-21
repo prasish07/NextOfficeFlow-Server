@@ -21,10 +21,18 @@ import {
 
 router
 	.route("/attendance/checkin")
-	.post(validateToken, authorizePermission("employee"), checkIn);
+	.post(
+		validateToken,
+		authorizePermission("employee", "project manager"),
+		checkIn
+	);
 router
 	.route("/attendance/checkout")
-	.post(validateToken, authorizePermission("employee"), checkOut);
+	.post(
+		validateToken,
+		authorizePermission("employee", "project manager"),
+		checkOut
+	);
 router
 	.route("/attendance/all")
 	.get(validateToken, authorizePermission("HR", "admin"), getAllTimeAttendance);

@@ -124,7 +124,6 @@ export const deleteEvent = async (req: Request, res: Response) => {
 export const getAllEvents = async (req: Request, res: Response) => {
 	const { start, end } = req.query;
 
-
 	let filter: any = {};
 
 	if (start && end) {
@@ -151,7 +150,7 @@ export const getAllEvents = async (req: Request, res: Response) => {
 		}
 	}
 
-	const events = await CalendarEvent.find(filter);
+	const events = await CalendarEvent.find(filter).sort({ start: -1 });
 
 	res.status(StatusCodes.OK).json({
 		events,
@@ -177,7 +176,7 @@ export const getAllEventsUpcomingTwoMonths = async (
 	};
 
 	try {
-		const events = await CalendarEvent.find(filter);
+		const events = await CalendarEvent.find(filter).sort({ start: 1 });
 
 		res.status(StatusCodes.OK).json({
 			events,
