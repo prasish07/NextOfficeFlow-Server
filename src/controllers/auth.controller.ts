@@ -70,6 +70,17 @@ export const login = async (req: Request, res: Response) => {
 			verified: false,
 			userId: user._id,
 			role: user.role,
+			isFirstTimePasswordChange: user.isFirstTimePasswordChange,
+		});
+	}
+
+	if (!user.isFirstTimePasswordChange) {
+		return res.status(StatusCodes.OK).json({
+			message: "Please change your password",
+			verified: true,
+			userId: user._id,
+			role: user.role,
+			isFirstTimePasswordChange: user.isFirstTimePasswordChange,
 		});
 	}
 
@@ -83,6 +94,7 @@ export const login = async (req: Request, res: Response) => {
 		userId: user._id,
 		role: user.role,
 		verified: user.verified,
+		isFirstTimePasswordChange: user.isFirstTimePasswordChange,
 	});
 };
 
@@ -217,7 +229,7 @@ export const singleUserVerification = async (req: Request, res: Response) => {
 	}
 
 	res.status(StatusCodes.OK).json({
-		message: "Email verified. Please login again",
+		message: "Email verified. Please change your password first",
 		userId: user._id,
 		role: user.role,
 	});
@@ -358,7 +370,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 
 	if (!id || !password) {
 		throw new customAPIErrors(
-			"Please provide email and new password",
+			"Please provide id and new password",
 			StatusCodes.BAD_REQUEST
 		);
 	}
@@ -369,9 +381,18 @@ export const resetPassword = async (req: Request, res: Response) => {
 		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
 	}
 
+	// Check if old password is same as new password
+	const isMatch = await comparePassword(password, user.password);
+	if (isMatch)
+		throw new customAPIErrors(
+			"Old password and new password cannot be same",
+			StatusCodes.BAD_REQUEST
+		);
+
 	const EncryptedPassword = hashPassword(password);
 
 	user.password = EncryptedPassword;
+	user.isFirstTimePasswordChange = true;
 
 	await user.save();
 

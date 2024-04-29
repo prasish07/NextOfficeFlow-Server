@@ -7,6 +7,7 @@ export interface IUser extends mongoose.Document {
 	verified: boolean;
 	verificationPin: string;
 	verificationPinExpires: Date;
+	isFirstTimePasswordChange: boolean;
 }
 
 const userSchema = new mongoose.Schema({
@@ -24,6 +25,7 @@ const userSchema = new mongoose.Schema({
 	verificationPin: String,
 	verified: { type: Boolean, default: false },
 	verificationPinExpires: Date,
+	isFirstTimePasswordChange: { type: Boolean, default: false },
 });
 
 const User = mongoose.model<IUser>("User", userSchema);

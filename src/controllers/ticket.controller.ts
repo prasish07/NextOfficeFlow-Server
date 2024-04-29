@@ -125,8 +125,6 @@ export const updateTicket = async (req: Request, res: Response) => {
 		throw new customAPIErrors("Project not found", StatusCodes.NOT_FOUND);
 	}
 
-	console.log(ticket.assigneeId.toString(), userId);
-
 	if (role === "employee" && detail.status) {
 		if (ticket.assigneeId.toString() !== userId) {
 			throw new customAPIErrors(
@@ -173,14 +171,24 @@ export const updateTicket = async (req: Request, res: Response) => {
 		newComments = [...notPopulateTicket.comments, newComment._id];
 	}
 
-	const updatedTicket = await Ticket.findByIdAndUpdate(
-		ticketId,
-		{ ...detail, attachments: newAttachments, comments: newComments },
-		{
-			new: true,
-			runValidators: true,
-		}
-	);
+	let updateQuery = {
+		...detail,
+		attachments: newAttachments,
+		comments: newComments,
+	};
+
+	if (!detail?.assigneeId?.length) {
+		updateQuery.assigneeId = null;
+	}
+
+	if (!detail?.linkedProject?.length) {
+		updateQuery.linkedProject = null;
+	}
+
+	const updatedTicket = await Ticket.findByIdAndUpdate(ticketId, updateQuery, {
+		new: true,
+		runValidators: true,
+	});
 
 	// create notification to reporterId
 	if (ticket.reporterId && detail.isUpdateStatus) {

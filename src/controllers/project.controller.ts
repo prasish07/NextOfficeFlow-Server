@@ -197,7 +197,7 @@ export const getProjectStatusCount = async (req: Request, res: Response) => {
 			onGoing++;
 		} else if (project.status === "completed") {
 			completed++;
-		} else if (project.status === "cancel") {
+		} else if (project.status === "cancelled") {
 			cancel++;
 		}
 		if (new Date(project.endDate) < new Date()) {

@@ -13,6 +13,7 @@ export const checkIn = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
 	const { location, type, lat, lng } = req.body;
 	const checkIn = new Date();
+
 	const status = checkIn.getHours() >= 9 ? "late" : "onTime";
 
 	// Check if an attendance record for the same user and date already exists
@@ -470,13 +471,17 @@ export const getTodayUnCheckedEmployees = async (
 	req: Request,
 	res: Response
 ) => {
-	const currentDay = new Date();
-	const dayOfWeek = currentDay.getDay();
-
-	if (dayOfWeek === 0 || dayOfWeek === 6) {
-		console.log("It is a weekend. Skipping making absent for today");
-		return;
-	}
+	const today = new Date();
+	const startOfDay = new Date(
+		today.getFullYear(),
+		today.getMonth(),
+		today.getDate()
+	);
+	const endOfDay = new Date(
+		today.getFullYear(),
+		today.getMonth(),
+		today.getDate() + 1
+	);
 
 	const employees = await Employee.find().populate("userId");
 
@@ -487,14 +492,12 @@ export const getTodayUnCheckedEmployees = async (
 	);
 
 	const uncheckedEmployees = await Promise.all(
-		allEmployees.map(async (employee) => {
+		allEmployees.map(async (employee: any) => {
 			const employeeCheckInRecord = await Attendance.findOne({
-				userId: employee.userId,
+				userId: employee.userId._id,
 				date: {
-					$gte: new Date(currentDay),
-					$lt: new Date(
-						new Date(currentDay).setDate(new Date(currentDay).getDate() + 1)
-					),
+					$gte: startOfDay,
+					$lt: endOfDay,
 				},
 			});
 

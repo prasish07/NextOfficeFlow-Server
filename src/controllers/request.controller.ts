@@ -147,38 +147,13 @@ export const getRequests = async (req: Request, res: Response) => {
 	let overtimeRequest = 0;
 	let attendanceRequest = 0;
 
-	const { date, status, type } = req.query;
+	const { status, type, startDate, endDate, selectedType, searchEmployee } =
+		req.query;
 
 	// Build the filter criteria
 	const filter: any = {};
 
 	filter.userId = user.userId;
-
-	if (date) {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-
-		if (date === "today") {
-			filter.date = today;
-		} else if (date === "yesterday") {
-			const yesterday = new Date(today);
-			yesterday.setDate(today.getDate() - 1);
-			filter.date = yesterday;
-		} else if (date === "thisWeek") {
-			const firstDayOfWeek = new Date(today);
-			firstDayOfWeek.setDate(today.getDate() - today.getDay());
-			filter.date = { $gte: firstDayOfWeek, $lt: today };
-		} else if (date === "thisMonth") {
-			const firstDayOfMonth = new Date(
-				today.getFullYear(),
-				today.getMonth(),
-				1
-			);
-			filter.date = { $gte: firstDayOfMonth, $lt: today };
-		} else {
-			filter.date = new Date(date as string);
-		}
-	}
 
 	if (status) {
 		filter.status = status;
@@ -186,6 +161,13 @@ export const getRequests = async (req: Request, res: Response) => {
 
 	if (type) {
 		filter.type = type;
+	}
+
+	if ((startDate && !endDate) || (endDate && !startDate)) {
+		throw new customAPIErrors(
+			"Please provide both startDate and endDate",
+			StatusCodes.BAD_REQUEST
+		);
 	}
 
 	const requests = await Requests.find(filter)
@@ -211,7 +193,7 @@ export const getRequests = async (req: Request, res: Response) => {
 	});
 
 	// Fetch employee information for each request's userId
-	const requestsData = await Promise.all(
+	let requestsData = await Promise.all(
 		requests.map(async (request) => {
 			const employee = await Employee.findOne({ userId: request.userId });
 
@@ -225,6 +207,48 @@ export const getRequests = async (req: Request, res: Response) => {
 			return modifiedRequest;
 		})
 	);
+
+	if (searchEmployee) {
+		requestsData = requestsData.filter((request) => {
+			return request.employeeName
+				.toLowerCase()
+				.includes(searchEmployee as string);
+		});
+	}
+
+	if (startDate && endDate) {
+		if (selectedType === "leave") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.leaveId.startDate) >=
+						new Date(startDate as string) &&
+					new Date(request.leaveId.startDate) <= new Date(endDate as string)
+				);
+			});
+		} else if (selectedType === "overtime") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.overtimeId.date) >= new Date(startDate as string) &&
+					new Date(request.overtimeId.date) <= new Date(endDate as string)
+				);
+			});
+		} else if (selectedType === "allowance") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.allowanceId.date) >= new Date(startDate as string) &&
+					new Date(request.allowanceId.date) <= new Date(endDate as string)
+				);
+			});
+		} else if (selectedType === "attendance") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.attendanceId.date) >=
+						new Date(startDate as string) &&
+					new Date(request.attendanceId.date) <= new Date(endDate as string)
+				);
+			});
+		}
+	}
 
 	return res.status(StatusCodes.OK).json({
 		requests: requestsData,
@@ -311,7 +335,15 @@ export const deleteRequest = async (req: Request, res: Response) => {
 
 export const getAllRequests = async (req: Request, res: Response) => {
 	// Extract filters from the query parameters
-	const { date, status, type, shouldFilterPM = true } = req.query;
+	const {
+		startDate,
+		endDate,
+		searchEmployee,
+		selectedType,
+		status,
+		type,
+		shouldFilterPM = true,
+	} = req.query;
 	let leaveRequest = 0;
 	let allowanceRequest = 0;
 	let overtimeRequest = 0;
@@ -322,30 +354,11 @@ export const getAllRequests = async (req: Request, res: Response) => {
 	// Build the filter criteria
 	const filter: any = {};
 
-	if (date) {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-
-		if (date === "today") {
-			filter.date = today;
-		} else if (date === "yesterday") {
-			const yesterday = new Date(today);
-			yesterday.setDate(today.getDate() - 1);
-			filter.date = yesterday;
-		} else if (date === "thisWeek") {
-			const firstDayOfWeek = new Date(today);
-			firstDayOfWeek.setDate(today.getDate() - today.getDay());
-			filter.date = { $gte: firstDayOfWeek, $lt: today };
-		} else if (date === "thisMonth") {
-			const firstDayOfMonth = new Date(
-				today.getFullYear(),
-				today.getMonth(),
-				1
-			);
-			filter.date = { $gte: firstDayOfMonth, $lt: today };
-		} else {
-			filter.date = new Date(date as string);
-		}
+	if ((startDate && !endDate) || (endDate && !startDate)) {
+		throw new customAPIErrors(
+			"Please provide both startDate and endDate",
+			StatusCodes.BAD_REQUEST
+		);
 	}
 
 	if (status) {
@@ -396,7 +409,7 @@ export const getAllRequests = async (req: Request, res: Response) => {
 	}
 
 	// Fetch employee information for each request's userId
-	const requestsData = await Promise.all(
+	let requestsData = await Promise.all(
 		filteredRequests.map(async (request) => {
 			const employee = await Employee.findOne({ userId: request.userId });
 
@@ -411,6 +424,48 @@ export const getAllRequests = async (req: Request, res: Response) => {
 		})
 	);
 
+	if (searchEmployee) {
+		requestsData = requestsData.filter((request) => {
+			return request.employeeName
+				.toLowerCase()
+				.includes(searchEmployee as string);
+		});
+	}
+
+	if (startDate && endDate) {
+		if (selectedType === "leave") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.leaveId.startDate) >=
+						new Date(startDate as string) &&
+					new Date(request.leaveId.startDate) <= new Date(endDate as string)
+				);
+			});
+		} else if (selectedType === "overtime") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.overtimeId.date) >= new Date(startDate as string) &&
+					new Date(request.overtimeId.date) <= new Date(endDate as string)
+				);
+			});
+		} else if (selectedType === "allowance") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.allowanceId.date) >= new Date(startDate as string) &&
+					new Date(request.allowanceId.date) <= new Date(endDate as string)
+				);
+			});
+		} else if (selectedType === "attendance") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.attendanceId.date) >=
+						new Date(startDate as string) &&
+					new Date(request.attendanceId.date) <= new Date(endDate as string)
+				);
+			});
+		}
+	}
+
 	return res.status(StatusCodes.OK).json({
 		requests: requestsData,
 		leaveRequest,
@@ -421,41 +476,26 @@ export const getAllRequests = async (req: Request, res: Response) => {
 };
 
 export const getPMRequestedRequest = async (req: Request, res: Response) => {
+	// Extract query
+	const { startDate, endDate, selectedType, searchEmployee } = req.query;
+	const { status, type } = req.query;
+
 	// Extract filters from the query parameters
 	const user = (req as CustomerRequestInterface).user;
 
-	const { date, status, type } = req.query;
 	let leaveRequest = 0;
 	let overtimeRequest = 0;
 
 	// Build the filter criteria
 	const filter: any = {};
+
 	filter.requestedTo = user.userId;
 
-	if (date) {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-
-		if (date === "today") {
-			filter.date = today;
-		} else if (date === "yesterday") {
-			const yesterday = new Date(today);
-			yesterday.setDate(today.getDate() - 1);
-			filter.date = yesterday;
-		} else if (date === "thisWeek") {
-			const firstDayOfWeek = new Date(today);
-			firstDayOfWeek.setDate(today.getDate() - today.getDay());
-			filter.date = { $gte: firstDayOfWeek, $lt: today };
-		} else if (date === "thisMonth") {
-			const firstDayOfMonth = new Date(
-				today.getFullYear(),
-				today.getMonth(),
-				1
-			);
-			filter.date = { $gte: firstDayOfMonth, $lt: today };
-		} else {
-			filter.date = new Date(date as string);
-		}
+	if ((startDate && !endDate) || (endDate && !startDate)) {
+		throw new customAPIErrors(
+			"Please provide both startDate and endDate",
+			StatusCodes.BAD_REQUEST
+		);
 	}
 
 	if (status) {
@@ -482,7 +522,7 @@ export const getPMRequestedRequest = async (req: Request, res: Response) => {
 	});
 
 	// Fetch employee information for each request's userId
-	const requestsData = await Promise.all(
+	let requestsData = await Promise.all(
 		requests.map(async (request) => {
 			const employee = await Employee.findOne({ userId: request.userId });
 
@@ -496,6 +536,48 @@ export const getPMRequestedRequest = async (req: Request, res: Response) => {
 			return modifiedRequest;
 		})
 	);
+
+	if (searchEmployee) {
+		requestsData = requestsData.filter((request) => {
+			return request.employeeName
+				.toLowerCase()
+				.includes(searchEmployee as string);
+		});
+	}
+
+	if (startDate && endDate) {
+		if (selectedType === "leave") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.leaveId.startDate) >=
+						new Date(startDate as string) &&
+					new Date(request.leaveId.startDate) <= new Date(endDate as string)
+				);
+			});
+		} else if (selectedType === "overtime") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.overtimeId.date) >= new Date(startDate as string) &&
+					new Date(request.overtimeId.date) <= new Date(endDate as string)
+				);
+			});
+		} else if (selectedType === "allowance") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.allowanceId.date) >= new Date(startDate as string) &&
+					new Date(request.allowanceId.date) <= new Date(endDate as string)
+				);
+			});
+		} else if (selectedType === "attendance") {
+			requestsData = requestsData.filter((request: any) => {
+				return (
+					new Date(request.attendanceId.date) >=
+						new Date(startDate as string) &&
+					new Date(request.attendanceId.date) <= new Date(endDate as string)
+				);
+			});
+		}
+	}
 
 	return res.status(StatusCodes.OK).json({
 		requests: requestsData,
