@@ -236,42 +236,66 @@ export const getAllTimeAttendance = async (req: Request, res: Response) => {
 };
 
 export const manualAttendance = async (req: Request, res: Response) => {
-	const { employeeId, date, checkIn, checkOut, status, reason } = req.body.data;
+	const details = req.body.data;
 
-	if (!employeeId) {
+	if (!details.employeeId) {
 		throw new customAPIErrors(
 			"Employee Id is required",
 			StatusCodes.BAD_REQUEST
 		);
 	}
 
-	if (!checkIn || !checkOut || !status) {
-		throw new customAPIErrors(
-			"Check In, Check Out and Status are required",
-			StatusCodes.BAD_REQUEST
-		);
+	if (!details.status) {
+		throw new customAPIErrors("Status are required", StatusCodes.BAD_REQUEST);
 	}
 
-	if (!reason) {
+	if (!details.date) {
+		throw new customAPIErrors("Date is required", StatusCodes.BAD_REQUEST);
+	}
+
+	if (!details.reason) {
 		throw new customAPIErrors("Reason is required", StatusCodes.BAD_REQUEST);
 	}
 
-	const userId = await User.findById(employeeId);
+	const userId = await User.findById(details.employeeId);
 
 	if (!userId) {
 		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
 	}
 
-	console.log(userId);
+	if (details.checkIn) {
+		const checkIn = new Date(details.checkIn);
+		const status = checkIn.getHours() >= 9 ? "late" : "onTime";
+		details.checkInStatus = status;
+
+		if (checkIn.getHours() >= 17) {
+			throw new customAPIErrors(
+				"You can't check in after 5 PM",
+				StatusCodes.BAD_REQUEST
+			);
+		}
+	}
+
+	if (details.checkOut) {
+		const checkOut = new Date(details.checkOut);
+		const status = checkOut.getHours() < 17 ? "early" : "onTime";
+		details.checkOutStatus = status;
+		details.overtime = checkOut.getHours() >= 17;
+
+		if (!details.checkIn) {
+			throw new customAPIErrors(
+				"You can't check out without checking in",
+				StatusCodes.BAD_REQUEST
+			);
+		}
+	}
 
 	const attendance = new Attendance({
-		date: new Date(date),
-		checkIn,
-		checkOut,
-		status,
-		reason,
+		date: new Date(details.date),
+		...details,
 		userId: userId._id,
 	});
+
 	await attendance.save();
 	res.status(StatusCodes.OK).json({
 		message: "Attendance added",
@@ -509,5 +533,63 @@ export const getTodayUnCheckedEmployees = async (
 
 	res.status(StatusCodes.OK).json({
 		uncheckedEmployees: uncheckedEmployees.filter((employee) => employee),
+	});
+};
+
+export const updateAttendance = async (req: Request, res: Response) => {
+	const { id } = req.params;
+	const details = req.body.data;
+
+	const attendance = await Attendance.findById(id);
+
+	if (!attendance) {
+		throw new customAPIErrors("Attendance not found", StatusCodes.NOT_FOUND);
+	}
+
+	if (details.checkIn) {
+		const checkIn = new Date(details.checkIn);
+		const status = checkIn.getHours() >= 9 ? "late" : "onTime";
+		details.checkInStatus = status;
+
+		if (checkIn.getHours() >= 17) {
+			throw new customAPIErrors(
+				"You can't check in after 5 PM",
+				StatusCodes.BAD_REQUEST
+			);
+		}
+	}
+
+	if (details.checkOut) {
+		const checkOut = new Date(details.checkOut);
+		const status = checkOut.getHours() < 17 ? "early" : "onTime";
+		details.checkOutStatus = status;
+		details.overtime = checkOut.getHours() >= 17;
+
+		if (!details.checkIn) {
+			throw new customAPIErrors(
+				"You can't check out without checking in",
+				StatusCodes.BAD_REQUEST
+			);
+		}
+	}
+
+	if (!details.reason) {
+		throw new customAPIErrors("Reason is required", StatusCodes.BAD_REQUEST);
+	}
+
+	const update = await Attendance.findByIdAndUpdate(
+		id,
+		{
+			...details,
+		},
+		{ new: true }
+	);
+
+	if (!update) {
+		throw new customAPIErrors("Attendance not found", StatusCodes.NOT_FOUND);
+	}
+
+	res.status(StatusCodes.OK).json({
+		message: "Attendance updated",
 	});
 };

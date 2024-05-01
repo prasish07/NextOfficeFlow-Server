@@ -52,8 +52,8 @@ cron.schedule("0 22 * * *", async () => {
 	}
 });
 
-// cron.schedule("53 21 * * *", async () => {
-cron.schedule("0 1 1 1 *", async () => {
+cron.schedule("44 1 * * *", async () => {
+	// cron.schedule("0 1 1 1 *", async () => {
 	console.log("Running cron job at 1 am on 1st January every year");
 	try {
 		await createLeaveDetailEveryYear();

@@ -338,17 +338,22 @@ export const getEmployeeTotalLeaveDetails = async (
 };
 
 export const createLeaveDetailEveryYear = async () => {
-	const employees = await Employee.find();
+	const employees = await Employee.find().populate("userId");
 	const currentYear = new Date().getFullYear();
 
 	await Promise.all(
-		employees.map(async (employee) => {
-			const leaveDetail = await LeaveDetail.findOne({
-				userId: employee.userId,
-				year: currentYear,
-			});
-			if (!leaveDetail) {
-				await createLeaveDetails(employee.userId);
+		employees.map(async (employee: any) => {
+			if (
+				employee.userId.role === "employee" ||
+				employee.userId.role === "project manager"
+			) {
+				const leaveDetail = await LeaveDetail.findOne({
+					userId: employee.userId,
+					year: currentYear,
+				});
+				if (!leaveDetail) {
+					await createLeaveDetails(employee.userId);
+				}
 			}
 		})
 	);

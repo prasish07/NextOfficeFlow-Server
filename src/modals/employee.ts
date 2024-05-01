@@ -20,15 +20,6 @@ export interface IEmployee extends mongoose.Document {
 	profilePicture: string;
 }
 
-export interface ILeaveDetail extends mongoose.Document {
-	userId: string;
-	availableLeaves: number;
-	leavesTaken: number;
-	year: number;
-	totalPaidLeaveTaken: number;
-	totalUnpaidLeaveTaken: number;
-}
-
 const employeeSchema = new mongoose.Schema({
 	name: { type: String, required: true },
 	position: { type: String, required: true },
@@ -55,6 +46,15 @@ const employeeSchema = new mongoose.Schema({
 	],
 	profilePicture: { type: String },
 });
+
+export interface ILeaveDetail extends mongoose.Document {
+	userId: string;
+	availableLeaves: number;
+	leavesTaken: number;
+	year: number;
+	totalPaidLeaveTaken: number;
+	totalUnpaidLeaveTaken: number;
+}
 
 const leaveDetailSchema = new mongoose.Schema({
 	userId: {

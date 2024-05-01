@@ -17,6 +17,7 @@ import {
 	getTodayTotalAttendance,
 	getTodayUnCheckedEmployees,
 	getSingleAttendance,
+	updateAttendance,
 } from "../controllers/attendance.controller";
 
 router
@@ -39,6 +40,10 @@ router
 router
 	.route("/attendance/manual")
 	.post(validateToken, authorizePermission("HR", "admin"), manualAttendance);
+
+router
+	.route("/attendance/manual/:id")
+	.patch(validateToken, authorizePermission("HR", "admin"), updateAttendance);
 
 router
 	.route("/attendance/me/today")

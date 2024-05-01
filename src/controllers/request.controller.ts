@@ -4,7 +4,7 @@ import customAPIErrors from "../errors/customError";
 import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
-import Employee from "../modals/employee";
+import Employee, { LeaveDetail } from "../modals/employee";
 
 import Requests, {
 	Leave,
@@ -177,8 +177,8 @@ export const getRequests = async (req: Request, res: Response) => {
 		.populate("attendanceId")
 		.sort({ createdAt: -1 });
 
-	requests.forEach((request) => {
-		if (request.requestType === "leave") {
+	requests.forEach((request: any) => {
+		if (request.requestType === "leave" && request.leaveId.type === "leave") {
 			leaveRequest++;
 		}
 		if (request.requestType === "allowance") {
@@ -216,36 +216,44 @@ export const getRequests = async (req: Request, res: Response) => {
 		});
 	}
 
+	console.log("asf", req.query);
+
 	if (startDate && endDate) {
 		if (selectedType === "leave") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.leaveId.startDate) >=
-						new Date(startDate as string) &&
-					new Date(request.leaveId.startDate) <= new Date(endDate as string)
-				);
+				if (request.requestType === "leave")
+					return (
+						new Date(request.leaveId.startDate) >=
+							new Date(startDate as string) &&
+						new Date(request.leaveId.startDate) <= new Date(endDate as string)
+					);
 			});
 		} else if (selectedType === "overtime") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.overtimeId.date) >= new Date(startDate as string) &&
-					new Date(request.overtimeId.date) <= new Date(endDate as string)
-				);
+				if (request.requestType === "overtime")
+					return (
+						new Date(request.overtimeId.date) >=
+							new Date(startDate as string) &&
+						new Date(request.overtimeId.date) <= new Date(endDate as string)
+					);
 			});
 		} else if (selectedType === "allowance") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.allowanceId.date) >= new Date(startDate as string) &&
-					new Date(request.allowanceId.date) <= new Date(endDate as string)
-				);
+				if (request.requestType === "allowance")
+					return (
+						new Date(request.allowanceId.date) >=
+							new Date(startDate as string) &&
+						new Date(request.allowanceId.date) <= new Date(endDate as string)
+					);
 			});
 		} else if (selectedType === "attendance") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.attendanceId.date) >=
-						new Date(startDate as string) &&
-					new Date(request.attendanceId.date) <= new Date(endDate as string)
-				);
+				if (request.requestType === "attendance")
+					return (
+						new Date(request.attendanceId.date) >=
+							new Date(startDate as string) &&
+						new Date(request.attendanceId.date) <= new Date(endDate as string)
+					);
 			});
 		}
 	}
@@ -282,7 +290,11 @@ export const getRequest = async (req: Request, res: Response) => {
 
 export const updateRequest = async (req: Request, res: Response) => {
 	const { requestId } = req.params;
-	const request = await Requests.findByIdAndUpdate(requestId, req.body);
+	const request: any = await Requests.findByIdAndUpdate(requestId, req.body)
+		.populate("leaveId")
+		.populate("allowanceId")
+		.populate("overtimeId")
+		.populate("attendanceId");
 	if (!request) {
 		throw new customAPIErrors(
 			`Request with id ${requestId} not found`,
@@ -304,6 +316,37 @@ export const updateRequest = async (req: Request, res: Response) => {
 	}
 
 	if (req.body.status === "approved") {
+		if (request.requestType === "leave" && request.leaveId.type === "leave") {
+			const leaveDetails = await LeaveDetail.findOne({
+				userId: request.userId,
+				year: new Date(request.leaveId.startDate).getFullYear(),
+			});
+			const startDate = new Date(request.leaveId.startDate);
+			const endDate = new Date(request.leaveId.endDate);
+
+			const timeDifference = endDate.getTime() - startDate.getTime();
+
+			let daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+
+			daysDifference = daysDifference + 1;
+
+			if (leaveDetails) {
+				for (let i = 1; i <= daysDifference; i++) {
+					if (
+						leaveDetails.totalPaidLeaveTaken >= leaveDetails.availableLeaves
+					) {
+						leaveDetails.totalUnpaidLeaveTaken =
+							leaveDetails.totalUnpaidLeaveTaken + 1;
+					} else {
+						leaveDetails.totalPaidLeaveTaken =
+							leaveDetails.totalPaidLeaveTaken + 1;
+					}
+					leaveDetails.leavesTaken = leaveDetails.leavesTaken + 1;
+				}
+				await leaveDetails.save();
+			}
+		}
+
 		createNotification({
 			message: `Your request has been approved`,
 			link: `/requests`,
@@ -392,8 +435,8 @@ export const getAllRequests = async (req: Request, res: Response) => {
 			}
 		});
 
-		filteredRequests.forEach((request) => {
-			if (request.requestType === "leave") {
+		filteredRequests.forEach((request: any) => {
+			if (request.requestType === "leave" && request.leaveId.type === "leave") {
 				leaveRequest++;
 			}
 			if (request.requestType === "allowance") {
@@ -435,33 +478,39 @@ export const getAllRequests = async (req: Request, res: Response) => {
 	if (startDate && endDate) {
 		if (selectedType === "leave") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.leaveId.startDate) >=
-						new Date(startDate as string) &&
-					new Date(request.leaveId.startDate) <= new Date(endDate as string)
-				);
+				if (request.requestType === "leave")
+					return (
+						new Date(request.leaveId.startDate) >=
+							new Date(startDate as string) &&
+						new Date(request.leaveId.startDate) <= new Date(endDate as string)
+					);
 			});
 		} else if (selectedType === "overtime") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.overtimeId.date) >= new Date(startDate as string) &&
-					new Date(request.overtimeId.date) <= new Date(endDate as string)
-				);
+				if (request.requestType === "overtime")
+					return (
+						new Date(request.overtimeId.date) >=
+							new Date(startDate as string) &&
+						new Date(request.overtimeId.date) <= new Date(endDate as string)
+					);
 			});
 		} else if (selectedType === "allowance") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.allowanceId.date) >= new Date(startDate as string) &&
-					new Date(request.allowanceId.date) <= new Date(endDate as string)
-				);
+				if (request.requestType === "allowance")
+					return (
+						new Date(request.allowanceId.date) >=
+							new Date(startDate as string) &&
+						new Date(request.allowanceId.date) <= new Date(endDate as string)
+					);
 			});
 		} else if (selectedType === "attendance") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.attendanceId.date) >=
-						new Date(startDate as string) &&
-					new Date(request.attendanceId.date) <= new Date(endDate as string)
-				);
+				if (request.requestType === "attendance")
+					return (
+						new Date(request.attendanceId.date) >=
+							new Date(startDate as string) &&
+						new Date(request.attendanceId.date) <= new Date(endDate as string)
+					);
 			});
 		}
 	}
@@ -507,13 +556,13 @@ export const getPMRequestedRequest = async (req: Request, res: Response) => {
 	}
 
 	// Use the filter criteria to fetch requests
-	const requests = await Requests.find()
+	const requests = await Requests.find(filter)
 		.populate("leaveId")
 		.populate("overtimeId")
 		.sort({ createdAt: -1 });
 
-	requests.forEach((request) => {
-		if (request.requestType === "leave") {
+	requests.forEach((request: any) => {
+		if (request.requestType === "leave" && request.leaveId.type === "leave") {
 			leaveRequest++;
 		}
 		if (request.requestType === "overtime") {
@@ -522,7 +571,7 @@ export const getPMRequestedRequest = async (req: Request, res: Response) => {
 	});
 
 	// Fetch employee information for each request's userId
-	let requestsData = await Promise.all(
+	let requestsData: any = await Promise.all(
 		requests.map(async (request) => {
 			const employee = await Employee.findOne({ userId: request.userId });
 
@@ -538,7 +587,7 @@ export const getPMRequestedRequest = async (req: Request, res: Response) => {
 	);
 
 	if (searchEmployee) {
-		requestsData = requestsData.filter((request) => {
+		requestsData = requestsData.filter((request: any) => {
 			return request.employeeName
 				.toLowerCase()
 				.includes(searchEmployee as string);
@@ -548,33 +597,39 @@ export const getPMRequestedRequest = async (req: Request, res: Response) => {
 	if (startDate && endDate) {
 		if (selectedType === "leave") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.leaveId.startDate) >=
-						new Date(startDate as string) &&
-					new Date(request.leaveId.startDate) <= new Date(endDate as string)
-				);
+				if (request.requestType === "leave")
+					return (
+						new Date(request.leaveId.startDate) >=
+							new Date(startDate as string) &&
+						new Date(request.leaveId.startDate) <= new Date(endDate as string)
+					);
 			});
 		} else if (selectedType === "overtime") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.overtimeId.date) >= new Date(startDate as string) &&
-					new Date(request.overtimeId.date) <= new Date(endDate as string)
-				);
+				if (request.requestType === "overtime")
+					return (
+						new Date(request.overtimeId.date) >=
+							new Date(startDate as string) &&
+						new Date(request.overtimeId.date) <= new Date(endDate as string)
+					);
 			});
 		} else if (selectedType === "allowance") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.allowanceId.date) >= new Date(startDate as string) &&
-					new Date(request.allowanceId.date) <= new Date(endDate as string)
-				);
+				if (request.requestType === "allowance")
+					return (
+						new Date(request.allowanceId.date) >=
+							new Date(startDate as string) &&
+						new Date(request.allowanceId.date) <= new Date(endDate as string)
+					);
 			});
 		} else if (selectedType === "attendance") {
 			requestsData = requestsData.filter((request: any) => {
-				return (
-					new Date(request.attendanceId.date) >=
-						new Date(startDate as string) &&
-					new Date(request.attendanceId.date) <= new Date(endDate as string)
-				);
+				if (request.requestType === "attendance")
+					return (
+						new Date(request.attendanceId.date) >=
+							new Date(startDate as string) &&
+						new Date(request.attendanceId.date) <= new Date(endDate as string)
+					);
 			});
 		}
 	}
