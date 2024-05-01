@@ -278,10 +278,42 @@ export const getEmployee = async (req: Request, res: Response) => {
 
 export const getUserInformation = async (req: Request, res: Response) => {
 	const { userId } = req.params;
-	const userInfo = await Employee.findOne({ userId }).populate("userId");
+	const userInfo: any = await Employee.findOne({ userId }).populate("userId");
+	const currentYear = new Date().getFullYear();
+
 	if (!userInfo) {
 		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
 	}
+
+	if (
+		(userInfo.userId as any).role === "employee" ||
+		(userInfo.userId as any).role === "project manager"
+	) {
+		const leaveDetail = await LeaveDetail.findOne({
+			userId: userId,
+			year: currentYear,
+		});
+
+		console.log(leaveDetail);
+
+		if (!leaveDetail) {
+			throw new customAPIErrors(
+				"Leave details not found",
+				StatusCodes.NOT_FOUND
+			);
+		}
+		return res.status(StatusCodes.OK).json({
+			message: "User found",
+			data: {
+				...userInfo._doc,
+				totalPaidLeaveTaken: leaveDetail.totalPaidLeaveTaken,
+				availableLeaves: leaveDetail.availableLeaves,
+				leavesTaken: leaveDetail.leavesTaken,
+				totalUnpaidLeaveTaken: leaveDetail.totalUnpaidLeaveTaken,
+			},
+		});
+	}
+
 	res.status(StatusCodes.OK).json({
 		message: "User found",
 		data: userInfo,
