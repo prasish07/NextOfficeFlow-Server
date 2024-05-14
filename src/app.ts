@@ -8,7 +8,6 @@ import router from "./routes/index.js";
 import { config } from "./config/config.js";
 import helmet from "helmet";
 import cors from "cors";
-import xss from "xss";
 import cron from "node-cron";
 import { markAbsentEmployeesForToday } from "./controllers/attendance.controller.js";
 import { createLeaveDetailEveryYear } from "./controllers/employee.controller.js";
@@ -22,7 +21,7 @@ const port = config.server.port;
 app.use(helmet());
 app.use(
 	cors({
-		origin: "http://localhost:3000",
+		origin: ["http://localhost:3000", "http://localhost:5001"],
 		methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
 		allowedHeaders: ["Content-Type", "Authorization"],
 		credentials: true,
@@ -35,7 +34,7 @@ app.use(express.json());
 app.use(cookieParser(config.jwt.secret));
 
 // routes
-app.use("/api/v1", router);
+app.use(router);
 
 // not found
 app.use(notFound);

@@ -216,8 +216,6 @@ export const getRequests = async (req: Request, res: Response) => {
 		});
 	}
 
-	console.log("asf", req.query);
-
 	if (startDate && endDate) {
 		if (selectedType === "leave") {
 			requestsData = requestsData.filter((request: any) => {
@@ -363,13 +361,29 @@ export const updateRequest = async (req: Request, res: Response) => {
 
 export const deleteRequest = async (req: Request, res: Response) => {
 	const { requestId } = req.params;
-	const request = await Requests.findByIdAndRemove(requestId);
+	const request = await Requests.findById(requestId);
 	if (!request) {
 		throw new customAPIErrors(
 			`Request with id ${requestId} not found`,
 			StatusCodes.NOT_FOUND
 		);
 	}
+
+	if (request.pmStatus !== "pending") {
+		throw new customAPIErrors(
+			`Non pending request cannot be deleted`,
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (request.status !== "pending") {
+		throw new customAPIErrors(
+			`Non pending request cannot be deleted`,
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	const removeRequest = await Requests.findByIdAndDelete(requestId);
 
 	return res.status(StatusCodes.OK).json({
 		message: "Request deleted successfully",

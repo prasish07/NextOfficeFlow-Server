@@ -278,3 +278,18 @@ export const updateGrading = async (req: Request, res: Response) => {
 		});
 	res.status(StatusCodes.OK).json({ message: "Grading updated successfully" });
 };
+
+export const RemoveTickets = async (req: Request, res: Response) => {
+	const ticketList = req.body;
+
+	const ticket = await Ticket.deleteMany({ _id: { $in: ticketList } });
+
+	if (!ticket) {
+		throw new customAPIErrors(
+			`No ticket found with those ids`,
+			StatusCodes.NOT_FOUND
+		);
+	}
+
+	res.status(StatusCodes.OK).json({ message: "Tickets deleted successfully" });
+};

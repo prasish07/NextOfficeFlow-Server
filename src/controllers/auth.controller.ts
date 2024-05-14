@@ -139,8 +139,6 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
 	// 		tokens
 	// );
 
-	// // console.log(profileResponse.data.picture); // This will log the URL of the profile picture
-
 	const googleUserInfo = response.data;
 
 	const email = googleUserInfo.email;

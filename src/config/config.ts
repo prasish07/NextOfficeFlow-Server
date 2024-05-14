@@ -6,7 +6,7 @@ dotenv.config({ path: absolutePath });
 
 const MONGO_URL = process.env.MONGO_URL || ``;
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_LIFETIME = process.env.JWT_LIFETIME;

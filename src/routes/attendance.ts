@@ -18,6 +18,7 @@ import {
 	getTodayUnCheckedEmployees,
 	getSingleAttendance,
 	updateAttendance,
+	breakManagement,
 } from "../controllers/attendance.controller";
 
 router
@@ -27,6 +28,15 @@ router
 		authorizePermission("employee", "project manager"),
 		checkIn
 	);
+
+router
+	.route("/attendance/break")
+	.patch(
+		validateToken,
+		authorizePermission("employee", "project manager"),
+		breakManagement
+	);
+
 router
 	.route("/attendance/checkout")
 	.post(

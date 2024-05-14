@@ -298,6 +298,39 @@ export const addAttachmentToProject = async (req: Request, res: Response) => {
 	res.status(StatusCodes.CREATED).json({ project });
 };
 
+export const removeAttachmentFromProject = async (
+	req: Request,
+	res: Response
+) => {
+	const { projectId, attachmentId } = req.params;
+
+	const project = await Project.findById(projectId);
+
+	if (!project) {
+		throw new customAPIErrors(
+			`No project found with id: ${projectId}`,
+			StatusCodes.NOT_FOUND
+		);
+	}
+
+	const attachment = await Attachment.findByIdAndRemove(attachmentId);
+
+	if (!attachment) {
+		throw new customAPIErrors(
+			`No attachment found with id: ${attachmentId}`,
+			StatusCodes.NOT_FOUND
+		);
+	}
+
+	project.attachments = project.attachments.filter(
+		(attachment: any) => attachment !== attachmentId
+	);
+
+	await project.save();
+
+	res.status(StatusCodes.OK).json({ project });
+};
+
 export const linkGitHub = async (req: Request, res: Response) => {
 	const { githubRepo } = req.body;
 	const { projectId } = req.params;
@@ -401,4 +434,19 @@ export const CreateAndLinkGitHub = async (req: Request, res: Response) => {
 	});
 
 	res.send({ message: "GitHub linked successfully", project });
+};
+
+export const RemoveProjects = async (req: Request, res: Response) => {
+	const projectList = req.body;
+
+	const projects = await Project.deleteMany({ _id: { $in: projectList } });
+
+	if (!projects) {
+		throw new customAPIErrors(
+			`No project found with those ids`,
+			StatusCodes.NOT_FOUND
+		);
+	}
+
+	res.status(StatusCodes.OK).json({ message: "Projects deleted successfully" });
 };

@@ -47,7 +47,7 @@ router
 		authorizePermission("admin", "HR", "project manager"),
 		updateRequest
 	)
-	.delete(validateToken, authorizePermission("admin", "HR"), deleteRequest);
+	.delete(validateToken, deleteRequest);
 
 router
 	.route("/requests")

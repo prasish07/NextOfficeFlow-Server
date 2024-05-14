@@ -9,6 +9,7 @@ import {
 	deleteTicket,
 	getOneTicket,
 	getTickets,
+	RemoveTickets,
 } from "../controllers/ticket.controller";
 
 const router = Router();
@@ -24,6 +25,14 @@ router
 		validateToken,
 		authorizePermission("project manager", "admin", "employee"),
 		getTickets
+	);
+
+router
+	.route("/ticket/removeMany")
+	.post(
+		validateToken,
+		authorizePermission("project manager", "admin"),
+		RemoveTickets
 	);
 
 router

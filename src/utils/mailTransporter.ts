@@ -45,9 +45,32 @@ const sentEmail = async (
 		);
 	}
 };
+const sentEmailFrom = async (
+	email: string,
+	boilerPlate: string,
+	subject: string,
+	from: string
+): Promise<void> => {
+	try {
+		const transporter = nodemailer.createTransport(mailerConfig);
+		const mailOptions = {
+			from: "prasishshrestha000999@gmail.com",
+			to: email,
+			subject: subject,
+			html: boilerPlate,
+		};
+		await transporter.sendMail(mailOptions);
+	} catch (error) {
+		console.error("Error sending email:", error);
+		throw new customAPIErrors(
+			"Error sending email",
+			StatusCodes.INTERNAL_SERVER_ERROR
+		);
+	}
+};
 
 const generatePin = (): number => {
 	return Math.floor(100000 + Math.random() * 900000);
 };
 
-export { sentEmail, generatePin };
+export { sentEmail, generatePin, sentEmailFrom };

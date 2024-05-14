@@ -4,7 +4,6 @@ export interface IComment extends mongoose.Document {
 	comment: string;
 	userId: string;
 	projectId: string;
-	// ticketId: string;
 }
 
 const commentSchema = new mongoose.Schema({
@@ -17,10 +16,6 @@ const commentSchema = new mongoose.Schema({
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Project",
 	},
-	// ticketId: {
-	// 	type: mongoose.Schema.Types.ObjectId,
-	// 	ref: "Ticket",
-	// },
 });
 
 const Comment = mongoose.model<IComment>("Comment", commentSchema);

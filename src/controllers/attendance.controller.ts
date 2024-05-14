@@ -83,6 +83,78 @@ export const checkIn = async (req: Request, res: Response) => {
 	});
 };
 
+export const breakManagement = async (req: Request, res: Response) => {
+	const user = (req as CustomerRequestInterface).user;
+	const { breakIn, breakOut } = req.body;
+	const checkIn = new Date();
+
+	const status = checkIn.getHours() >= 9 ? "late" : "onTime";
+
+	// Check if an attendance record for the same user and date already exists
+	const existingAttendance = await Attendance.findOne({
+		userId: user.userId,
+		date: {
+			$gte: new Date(
+				checkIn.getFullYear(),
+				checkIn.getMonth(),
+				checkIn.getDate()
+			),
+			$lt: new Date(
+				checkIn.getFullYear(),
+				checkIn.getMonth(),
+				checkIn.getDate() + 1
+			),
+		},
+	});
+
+	if (!breakIn || !breakOut) {
+		throw new customAPIErrors(
+			"Break in and break out are required",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	// throw error if break if longer than 1 hours
+	const breakInTime = new Date(breakIn);
+	const breakOutTime = new Date(breakOut);
+
+	if (breakOutTime.getTime() - breakInTime.getTime() > 3600000) {
+		throw new customAPIErrors(
+			"Break can't be longer than 1 hour",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (!existingAttendance) {
+		throw new customAPIErrors(
+			"You have not checked in",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (existingAttendance.checkOut) {
+		throw new customAPIErrors(
+			"You have already checked out",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (existingAttendance.breaks.length >= 4) {
+		throw new customAPIErrors(
+			"You have already taken 2 breaks",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	existingAttendance.breaks.push({ breakIn, breakOut });
+
+	await existingAttendance.save();
+
+	res.status(StatusCodes.OK).json({
+		message: "Break added",
+	});
+};
+
 export const checkOut = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
 

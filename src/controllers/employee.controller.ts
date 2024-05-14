@@ -10,6 +10,7 @@ import {
 	createNotification,
 	createNotificationByRole,
 } from "../utils/notification.helper";
+import { sentEmail, sentEmailFrom } from "../utils/mailTransporter";
 
 export type employeeProps = {
 	name: string;
@@ -294,8 +295,6 @@ export const getUserInformation = async (req: Request, res: Response) => {
 			year: currentYear,
 		});
 
-		console.log(leaveDetail);
-
 		if (!leaveDetail) {
 			throw new customAPIErrors(
 				"Leave details not found",
@@ -395,5 +394,29 @@ export const createLeaveDetailEveryYear = async () => {
 		link: "/leave",
 		type: "leave",
 		userId: "",
+	});
+};
+
+export const sentResignationMail = async (req: Request, res: Response) => {
+	const { email, content } = req.body;
+
+	if (!email || !content) {
+		throw new customAPIErrors(
+			"Email and content is required",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	const user = (req as CustomerRequestInterface).user;
+
+	const userInfo = await User.findById(user.userId);
+
+	if (!userInfo) {
+		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
+	}
+	sentEmail(email, content, `Resignation from ${userInfo.email}`);
+
+	res.status(StatusCodes.OK).json({
+		message: "Email sent successfully",
 	});
 };

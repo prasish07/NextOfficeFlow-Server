@@ -25,6 +25,8 @@ export const createNotificationAll = async (data: NotificationProps) => {
 		});
 		notification.save();
 	});
+
+	return users;
 };
 
 export const createNotification = async (data: NotificationProps) => {

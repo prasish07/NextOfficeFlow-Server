@@ -5,6 +5,7 @@ import {
 } from "../middleware/auth.middleware";
 
 import {
+	createNotification,
 	getNotificationUnreadCount,
 	getNotifications,
 	markAllAsRead,
@@ -14,6 +15,9 @@ import {
 const router = Router();
 
 router.route("/notifications").get(validateToken, getNotifications);
+
+router.route("/notification").post(createNotification);
+
 router
 	.route("/notifications/count")
 	.get(validateToken, getNotificationUnreadCount);

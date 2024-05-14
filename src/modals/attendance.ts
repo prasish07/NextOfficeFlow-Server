@@ -14,6 +14,10 @@ export interface IAttendance extends mongoose.Document {
 	overtime: boolean;
 	reason: string;
 	status: string;
+	breaks: {
+		breakIn: string;
+		breakOut: string;
+	}[];
 }
 
 const attendanceSchema = new mongoose.Schema({
@@ -30,6 +34,12 @@ const attendanceSchema = new mongoose.Schema({
 	overtime: { type: Boolean },
 	reason: { type: String },
 	status: { type: String, enum: ["present", "absent"] },
+	breaks: [
+		{
+			breakIn: String,
+			breakOut: String,
+		},
+	],
 });
 
 const Attendance = mongoose.model<IAttendance>("Attendance", attendanceSchema);

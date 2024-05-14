@@ -4,6 +4,7 @@ import customAPIErrors from "../errors/customError";
 import Notification from "../modals/notification";
 import User from "../modals/user";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
+import { createNotificationAll } from "../utils/notification.helper";
 
 export const getNotifications = async (req: Request, res: Response) => {
 	const { limit } = req.query;
@@ -57,4 +58,24 @@ export const markAllAsRead = async (req: Request, res: Response) => {
 	);
 
 	res.status(StatusCodes.OK).json({ message: "All notifications updated" });
+};
+
+export const createNotification = async (req: Request, res: Response) => {
+	const { userId, message, link, type } = req.body;
+
+	const notification = await createNotificationAll({
+		userId,
+		message,
+		link,
+		type,
+	});
+
+	if (!notification) {
+		throw new customAPIErrors(
+			"Notification not created",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	return res.status(StatusCodes.OK).json({ message: "Notification created" });
 };
