@@ -12,7 +12,7 @@ export const checkIn = async (req: Request, res: Response) => {
 	const { location, type, lat, lng } = req.body;
 	const checkIn = new Date();
 
-	const status = checkIn.getHours() >= 9 ? "late" : "onTime";
+	const status = checkIn.getHours() > 9 ? "late" : "onTime";
 
 	// Check if an attendance record for the same user and date already exists
 	const existingAttendance = await Attendance.findOne({
@@ -133,6 +133,13 @@ export const breakManagement = async (req: Request, res: Response) => {
 	if (diffHours > 1) {
 		throw new customAPIErrors(
 			"Break can't be longer than 1 hour",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (diffHours < 0) {
+		throw new customAPIErrors(
+			"Break out can't be before break in",
 			StatusCodes.BAD_REQUEST
 		);
 	}
@@ -316,6 +323,7 @@ export const getAllTimeAttendance = async (req: Request, res: Response) => {
 		TotalLate,
 		TotalOnTime,
 		TotalEarlyLeave,
+		TotalOvertime,
 	});
 };
 
@@ -349,7 +357,7 @@ export const manualAttendance = async (req: Request, res: Response) => {
 
 	if (details.checkIn) {
 		const checkIn = new Date(details.checkIn);
-		const status = checkIn.getHours() >= 9 ? "late" : "onTime";
+		const status = checkIn.getHours() > 9 ? "late" : "onTime";
 		details.checkInStatus = status;
 
 		if (checkIn.getHours() >= 17) {

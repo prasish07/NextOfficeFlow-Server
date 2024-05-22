@@ -56,17 +56,17 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 				totalTicketInProject = ticketCount.length;
 				await Promise.all(
 					ticketCount.map((ticket) => {
-						if (ticket.status === "completed") {
+						if (ticket.status === "Completed") {
 							completedTicketInProject++;
 						}
 						if (
 							ticket.dueDate < new Date() &&
-							ticket.status !== "completed" &&
-							ticket.status !== "cancelled"
+							ticket.status !== "Completed" &&
+							ticket.status !== "Cancelled"
 						) {
 							overdueTicketInProject++;
 						}
-						if (ticket.status === "cancelled") {
+						if (ticket.status === "Cancelled") {
 							cancelledTicketInProject++;
 						}
 					})
@@ -108,18 +108,17 @@ export const getEmployeeMeasures = async (req: Request, res: Response) => {
 		totalTicket = ticketCount.length;
 		await Promise.all(
 			ticketCount.map((ticket) => {
-				totalTicket++;
-				if (ticket.status === "completed") {
+				if (ticket.status === "Completed") {
 					completedTicket++;
 				}
 				if (
 					ticket.dueDate < new Date() &&
-					ticket.status !== "completed" &&
-					ticket.status !== "cancelled"
+					ticket.status !== "Completed" &&
+					ticket.status !== "Cancelled"
 				) {
 					overdueTicket++;
 				}
-				if (ticket.status === "cancelled") {
+				if (ticket.status === "Cancelled") {
 					cancelledTicket++;
 				}
 			})
