@@ -420,3 +420,60 @@ export const sentResignationMail = async (req: Request, res: Response) => {
 		message: "Email sent successfully",
 	});
 };
+
+export const notifyAdminAndHRAboutEmployeeEndDates = async () => {
+	const employees = await Employee.find();
+
+	if (!employees || employees.length === 0) {
+		throw new customAPIErrors(`No employees found`, StatusCodes.NOT_FOUND);
+	}
+
+	const oneMonthFromNow = new Date();
+	oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+	oneMonthFromNow.setHours(0, 0, 0, 0);
+
+	const oneDayFromNow = new Date();
+	oneDayFromNow.setDate(oneDayFromNow.getDate() + 1);
+	oneDayFromNow.setHours(0, 0, 0, 0);
+
+	employees.forEach(async (employee) => {
+		const employeeEndDate = new Date(employee.endDate);
+		employeeEndDate.setHours(0, 0, 0, 0);
+
+		if (employeeEndDate.getTime() === oneMonthFromNow.getTime()) {
+			createNotificationByRole({
+				message: `Employee with name ${employee.name} is ending their term in one month`,
+				role: "admin",
+				link: `/employee`,
+				type: "employee",
+			});
+
+			createNotificationByRole({
+				message: `Employee with name ${employee.name} is ending their term in one month`,
+				role: "HR",
+				link: `/employee`,
+				type: "employee",
+			});
+
+			console.log(`One-month notification sent for employee ${employee.name}`);
+		}
+
+		if (employeeEndDate.getTime() === oneDayFromNow.getTime()) {
+			createNotificationByRole({
+				message: `Employee with name ${employee.name} is ending their term in one day`,
+				role: "admin",
+				link: `/employee`,
+				type: "employee",
+			});
+
+			createNotificationByRole({
+				message: `Employee with name ${employee.name} is ending their term in one day`,
+				role: "HR",
+				link: `/employee`,
+				type: "employee",
+			});
+
+			console.log(`One-day notification sent for employee ${employee.name}`);
+		}
+	});
+};

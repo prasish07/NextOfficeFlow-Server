@@ -1,11 +1,9 @@
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
 import customAPIErrors from "../errors/customError";
-import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
 import Attendance from "../modals/attendance";
-import mongoose from "mongoose";
 import Employee from "../modals/employee";
 import { createNotification } from "../utils/notification.helper";
 
@@ -60,11 +58,7 @@ export const checkIn = async (req: Request, res: Response) => {
 	} else {
 		const attendance = new Attendance({
 			userId: user.userId,
-			date: new Date(
-				checkIn.getFullYear(),
-				checkIn.getMonth(),
-				checkIn.getDate()
-			),
+			date: new Date(),
 			checkIn: checkIn.toISOString(),
 			type,
 			location,
@@ -113,12 +107,30 @@ export const breakManagement = async (req: Request, res: Response) => {
 			StatusCodes.BAD_REQUEST
 		);
 	}
+	const [breakInHours, breakInMinutes] = breakIn.split(":").map(Number);
+	const [breakOutHours, breakOutMinutes] = breakOut.split(":").map(Number);
 
-	// throw error if break if longer than 1 hours
-	const breakInTime = new Date(breakIn);
-	const breakOutTime = new Date(breakOut);
+	const now = new Date();
+	const breakInTime = new Date(
+		now.getFullYear(),
+		now.getMonth(),
+		now.getDate(),
+		breakInHours,
+		breakInMinutes
+	);
+	const breakOutTime = new Date(
+		now.getFullYear(),
+		now.getMonth(),
+		now.getDate(),
+		breakOutHours,
+		breakOutMinutes
+	);
 
-	if (breakOutTime.getTime() - breakInTime.getTime() > 3600000) {
+	const diffMilliseconds = breakOutTime.getTime() - breakInTime.getTime();
+
+	const diffHours = diffMilliseconds / (1000 * 60 * 60);
+
+	if (diffHours > 1) {
 		throw new customAPIErrors(
 			"Break can't be longer than 1 hour",
 			StatusCodes.BAD_REQUEST
@@ -141,7 +153,7 @@ export const breakManagement = async (req: Request, res: Response) => {
 
 	if (existingAttendance.breaks.length >= 4) {
 		throw new customAPIErrors(
-			"You have already taken 2 breaks",
+			"You have already taken 4 breaks",
 			StatusCodes.BAD_REQUEST
 		);
 	}
@@ -360,6 +372,24 @@ export const manualAttendance = async (req: Request, res: Response) => {
 				StatusCodes.BAD_REQUEST
 			);
 		}
+	}
+
+	const date = new Date(details.date);
+
+	// Check if that attendance already exist
+	const existingAttendance = await Attendance.findOne({
+		userId: userId._id,
+		date: {
+			$gte: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
+			$lt: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1),
+		},
+	});
+
+	if (existingAttendance) {
+		throw new customAPIErrors(
+			"Attendance for this date already exists",
+			StatusCodes.BAD_REQUEST
+		);
 	}
 
 	const attendance = new Attendance({

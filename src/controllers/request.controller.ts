@@ -113,20 +113,20 @@ export const createRequest = async (req: Request, res: Response) => {
 	if (req.body.requestedTo) {
 		createNotification({
 			message: `You have a new request from ${requestedUser?.name}`,
-			link: `/requests`,
+			link: `/request/employee`,
 			type: "request",
 			userId: request?.requestedTo,
 		});
 	} else {
-		createNotification({
-			message: `You have a new request from ${requestedUser?.name}`,
+		createNotificationByRole({
+			message: `You have a new request ${request.requestType} from ${requestedUser?.name}`,
 			link: `/request/all`,
 			type: "request",
 			role: "admin",
 		});
 
-		createNotification({
-			message: `You have a new request from ${requestedUser?.name}`,
+		createNotificationByRole({
+			message: `You have a new ${request.requestType} request from ${requestedUser?.name}`,
 			link: `/request/all`,
 			type: "request",
 			role: "HR",
@@ -306,9 +306,9 @@ export const updateRequest = async (req: Request, res: Response) => {
 		request.status === "pending"
 	) {
 		createNotificationByRole({
-			message: `You have a new request`,
+			message: `You have a new ${request.requestType} request`,
 			role: "HR",
-			link: `/requests`,
+			link: `/request/all`,
 			type: "request",
 		});
 	}
@@ -346,8 +346,8 @@ export const updateRequest = async (req: Request, res: Response) => {
 		}
 
 		createNotification({
-			message: `Your request has been approved`,
-			link: `/requests`,
+			message: `Your ${request.requestType} request has been approved`,
+			link: `/request/my-request`,
 			type: "request",
 			userId: request.userId,
 		});

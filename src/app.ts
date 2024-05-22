@@ -10,7 +10,18 @@ import helmet from "helmet";
 import cors from "cors";
 import cron from "node-cron";
 import { markAbsentEmployeesForToday } from "./controllers/attendance.controller.js";
-import { createLeaveDetailEveryYear } from "./controllers/employee.controller.js";
+import {
+	createLeaveDetailEveryYear,
+	notifyAdminAndHRAboutEmployeeEndDates,
+} from "./controllers/employee.controller.js";
+import {
+	autoNotifyPMAdminAndAssigneeEmployeeAboutDueProject,
+	autoNotifyPMAdminAndAssigneeEmployeeAboutDueProjectOneWeekBefore,
+} from "./controllers/project.controller.js";
+import {
+	autoNotifyAdminAndAssigneeAboutDueTicketsOneWeekBefore,
+	autoNotifyAdminAndAssigneeAboutOverdueTickets,
+} from "./controllers/ticket.controller.js";
 
 const app = express();
 
@@ -56,6 +67,20 @@ cron.schedule("44 1 * * *", async () => {
 	console.log("Running cron job at 1 am on 1st January every year");
 	try {
 		await createLeaveDetailEveryYear();
+	} catch (error) {
+		console.log(error);
+	}
+});
+
+// Cron to notify about project/ticket/employee
+cron.schedule("59 23 * * *", async () => {
+	console.log("Running cron job to check project/ticket/employee status");
+	try {
+		await autoNotifyPMAdminAndAssigneeEmployeeAboutDueProject();
+		await autoNotifyPMAdminAndAssigneeEmployeeAboutDueProjectOneWeekBefore();
+		await notifyAdminAndHRAboutEmployeeEndDates();
+		await autoNotifyAdminAndAssigneeAboutOverdueTickets();
+		await autoNotifyAdminAndAssigneeAboutDueTicketsOneWeekBefore();
 	} catch (error) {
 		console.log(error);
 	}

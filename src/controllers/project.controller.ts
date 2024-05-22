@@ -19,11 +19,11 @@ export const createProject = async (req: Request, res: Response) => {
 	const body = req.body;
 
 	const user = (req as CustomerRequestInterface).user;
-	const UserId = user.userId;
+	const userId = user.userId;
 
 	const project = await Project.create({
 		...body,
-		UserId,
+		userId,
 	});
 
 	// create notification for all project managers
@@ -121,9 +121,16 @@ export const updateProject = async (req: Request, res: Response) => {
 
 	const PMName = await Employee.findOne({ userId: project.userId });
 
+	if (!PMName) {
+		throw new customAPIErrors(
+			`No project manager found with id: ${project.userId}`,
+			StatusCodes.NOT_FOUND
+		);
+	}
+
 	// create notification for all project managers
 	createNotificationByRole({
-		message: `Project with title ${project.title} was updated by ${PMName}`,
+		message: `Project with title ${project.title} was updated by ${PMName?.name}`,
 		role: "admin",
 		link: `/project/${project._id}`,
 		type: "project",
@@ -135,7 +142,7 @@ export const updateProject = async (req: Request, res: Response) => {
 
 	users.forEach((userId: any) => {
 		createNotification({
-			message: `Project with title ${project.title} was updated by ${PMName}`,
+			message: `Project with title ${project.title} was updated by ${PMName?.name}`,
 			role: "assignee",
 			link: `/project/${project._id}`,
 			type: "project",
@@ -335,20 +342,16 @@ export const linkGitHub = async (req: Request, res: Response) => {
 	const { githubRepo } = req.body;
 	const { projectId } = req.params;
 
-	const regexPattern = new RegExp("/([^/]+)/?$");
-
-	const match = githubRepo.match(regexPattern);
-
-	if (!match) {
+	if (!githubRepo) {
 		throw new customAPIErrors(
-			"Please provide a valid github repo with repo name in it",
+			"Please provide githubRepo",
 			StatusCodes.BAD_REQUEST
 		);
 	}
 
 	const project = await Project.findByIdAndUpdate(
 		projectId,
-		{ githubRepo: match[1] },
+		{ githubRepo: githubRepo },
 		{ new: true, runValidators: true }
 	);
 
@@ -450,3 +453,94 @@ export const RemoveProjects = async (req: Request, res: Response) => {
 
 	res.status(StatusCodes.OK).json({ message: "Projects deleted successfully" });
 };
+
+export const autoNotifyPMAdminAndAssigneeEmployeeAboutDueProject = async () => {
+	const projects = await Project.find();
+
+	if (!projects) {
+		throw new customAPIErrors(`No project found`, StatusCodes.NOT_FOUND);
+	}
+
+	projects.forEach(async (project) => {
+		if (
+			new Date(project.endDate) < new Date() &&
+			project.status !== "overdue"
+		) {
+			const PMName = await Employee.findOne({ userId: project.userId });
+
+			createNotificationByRole({
+				message: `Project with title ${project.title} is overdue`,
+				role: "admin",
+				link: `/project/${project._id}`,
+				type: "project",
+			});
+
+			const users = project.assigneeId || [];
+			users.push(project.userId);
+
+			users.forEach((userId: any) => {
+				createNotification({
+					message: `Project with title ${project.title} is overdue`,
+					role: "employee",
+					link: `/project/${project._id}`,
+					type: "project",
+					userId: userId,
+				});
+			});
+			const updateProject = await Project.findByIdAndUpdate(project._id, {
+				status: "overdue",
+			});
+
+			if (!updateProject) {
+				throw new customAPIErrors(
+					`No project found with id: ${project._id}`,
+					StatusCodes.NOT_FOUND
+				);
+			}
+		}
+	});
+};
+
+export const autoNotifyPMAdminAndAssigneeEmployeeAboutDueProjectOneWeekBefore =
+	async () => {
+		const projects = await Project.find();
+
+		if (!projects) {
+			throw new customAPIErrors(`No project found`, StatusCodes.NOT_FOUND);
+		}
+
+		const oneWeekBeforeNow = new Date();
+		oneWeekBeforeNow.setDate(oneWeekBeforeNow.getDate() + 7);
+
+		projects.forEach(async (project) => {
+			const projectEndDate = new Date(project.endDate);
+			if (
+				projectEndDate < oneWeekBeforeNow &&
+				projectEndDate >= new Date() &&
+				project.status !== "overdue"
+			) {
+				const PMName = await Employee.findOne({ userId: project.userId });
+
+				createNotificationByRole({
+					message: `Project with title ${project.title} is due in one week`,
+					role: "admin",
+					link: `/project/${project._id}`,
+					type: "project",
+				});
+
+				const users = project.assigneeId || [];
+				users.push(project.userId);
+
+				users.forEach((userId: any) => {
+					createNotification({
+						message: `Project with title ${project.title} is due in one week`,
+						role: "employee",
+						link: `/project/${project._id}`,
+						type: "project",
+						userId: userId,
+					});
+				});
+				console.log("sending message");
+			}
+		});
+	};

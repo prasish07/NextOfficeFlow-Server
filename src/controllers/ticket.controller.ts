@@ -8,7 +8,10 @@ import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
 import Ticket from "../modals/ticket";
-import { createNotification } from "../utils/notification.helper";
+import {
+	createNotification,
+	createNotificationByRole,
+} from "../utils/notification.helper";
 
 export const createTicket = async (req: Request, res: Response) => {
 	const detail = req.body;
@@ -126,6 +129,13 @@ export const updateTicket = async (req: Request, res: Response) => {
 	}
 
 	if (role === "employee" && detail.status) {
+		if (ticket.assigneeId === null || !ticket.assigneeId) {
+			throw new customAPIErrors(
+				"This ticket is unassigned, you can not change the status",
+				StatusCodes.FORBIDDEN
+			);
+		}
+
 		if (ticket.assigneeId.toString() !== userId) {
 			throw new customAPIErrors(
 				"You are not allowed to change status of ticket that is not assign to you",
@@ -171,17 +181,17 @@ export const updateTicket = async (req: Request, res: Response) => {
 		newComments = [...notPopulateTicket.comments, newComment._id];
 	}
 
-	let updateQuery = {
-		...detail,
-		attachments: newAttachments,
-		comments: newComments,
-	};
+	const updateQuery = { ...detail };
 
-	if (!detail?.assigneeId?.length) {
+	if (attachments) updateQuery.attachments = newAttachments;
+
+	if (comment) updateQuery.comments = newComments;
+
+	if (detail?.assigneeId === null) {
 		updateQuery.assigneeId = null;
 	}
 
-	if (!detail?.linkedProject?.length) {
+	if (detail?.linkedProject === null) {
 		updateQuery.linkedProject = null;
 	}
 
@@ -292,4 +302,109 @@ export const RemoveTickets = async (req: Request, res: Response) => {
 	}
 
 	res.status(StatusCodes.OK).json({ message: "Tickets deleted successfully" });
+};
+
+export const autoNotifyAdminAndAssigneeAboutDueTicketsOneWeekBefore =
+	async () => {
+		const tickets = await Ticket.find();
+
+		if (!tickets || tickets.length === 0) {
+			throw new customAPIErrors(`No tickets found`, StatusCodes.NOT_FOUND);
+		}
+
+		const oneWeekBeforeNow = new Date();
+		oneWeekBeforeNow.setDate(oneWeekBeforeNow.getDate() + 7);
+
+		tickets.forEach(async (ticket) => {
+			const ticketDueDate = new Date(ticket.dueDate);
+
+			if (
+				ticketDueDate < oneWeekBeforeNow &&
+				ticketDueDate >= new Date() &&
+				ticket.status !== "Overdue"
+			) {
+				// Notify admin
+				createNotificationByRole({
+					message: `Ticket with title ${ticket.title} is due in one week`,
+					role: "admin",
+					link: `/ticket/${ticket._id}`,
+					type: "ticket",
+				});
+
+				// Notify assignees
+				const users = [];
+				if (ticket.assigneeId) {
+					users.push(ticket.assigneeId);
+				}
+				if (ticket.reporterId) {
+					users.push(ticket.reporterId);
+				}
+
+				users.forEach((userId: any) => {
+					createNotification({
+						message: `Ticket with title ${ticket.title} is due in one week`,
+						role: "employee",
+						link: `/ticket`,
+						type: "ticket",
+						userId: userId,
+					});
+				});
+				console.log("Notification sent for ticket", ticket.title);
+			}
+		});
+	};
+
+export const autoNotifyAdminAndAssigneeAboutOverdueTickets = async () => {
+	const tickets = await Ticket.find();
+
+	if (!tickets || tickets.length === 0) {
+		throw new customAPIErrors(`No tickets found`, StatusCodes.NOT_FOUND);
+	}
+
+	tickets.forEach(async (ticket) => {
+		if (new Date(ticket.dueDate) < new Date() && ticket.status !== "Overdue") {
+			// Notify admin
+			createNotificationByRole({
+				message: `Ticket with title ${ticket.title} is overdue`,
+				role: "admin",
+				link: `/ticket`,
+				type: "ticket",
+			});
+
+			// Notify assignees
+			const users = [];
+
+			if (ticket.assigneeId) {
+				users.push(ticket.assigneeId);
+			}
+			if (ticket.reporterId) {
+				users.push(ticket.reporterId);
+			}
+
+			users.forEach((userId: any) => {
+				createNotification({
+					message: `Ticket with title ${ticket.title} is overdue`,
+					role: "employee",
+					link: `/ticket`,
+					type: "ticket",
+					userId: userId,
+				});
+			});
+
+			// Update ticket status to "overdue"
+			const updatedTicket = await Ticket.findByIdAndUpdate(ticket._id, {
+				status: "Overdue",
+			});
+
+			if (!updatedTicket) {
+				throw new customAPIErrors(
+					`No ticket found with id: ${ticket._id}`,
+					StatusCodes.NOT_FOUND
+				);
+			}
+			console.log(
+				`Notification sent and status updated for ticket ${ticket.title}`
+			);
+		}
+	});
 };
