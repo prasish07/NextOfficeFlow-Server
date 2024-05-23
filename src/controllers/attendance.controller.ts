@@ -357,7 +357,14 @@ export const manualAttendance = async (req: Request, res: Response) => {
 
 	if (details.checkIn) {
 		const checkIn = new Date(details.checkIn);
-		const status = checkIn.getHours() > 9 ? "late" : "onTime";
+		let status;
+		if (checkIn.getHours() <= 9) {
+			status = "onTime";
+		} else if (checkIn.getHours() > 9 && checkIn.getHours() < 17) {
+			status = "late";
+		} else {
+			status = "N/A";
+		}
 		details.checkInStatus = status;
 
 		if (checkIn.getHours() >= 17) {
@@ -370,9 +377,16 @@ export const manualAttendance = async (req: Request, res: Response) => {
 
 	if (details.checkOut) {
 		const checkOut = new Date(details.checkOut);
-		const status = checkOut.getHours() < 17 ? "early" : "onTime";
+		let status;
+		if (checkOut.getHours() < 17) {
+			status = "early";
+		} else if (checkOut.getHours() >= 17) {
+			status = "onTime";
+		} else {
+			status = "N/A";
+		}
 		details.checkOutStatus = status;
-		details.overtime = checkOut.getHours() >= 17;
+		details.overtime = checkOut.getHours() > 17;
 
 		if (!details.checkIn) {
 			throw new customAPIErrors(
