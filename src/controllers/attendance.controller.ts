@@ -9,8 +9,8 @@ import { createNotification } from "../utils/notification.helper";
 
 export const checkIn = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
-	const { location, type, lat, lng } = req.body;
-	const checkIn = new Date();
+	const { location, type, lat, lng, checkInTime } = req.body;
+	const checkIn = new Date(checkInTime ?? (new Date() as any));
 
 	const status = checkIn.getHours() > 9 ? "late" : "onTime";
 
@@ -176,8 +176,9 @@ export const breakManagement = async (req: Request, res: Response) => {
 
 export const checkOut = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
+	const { checkOutTime } = req.body;
 
-	const checkOut = new Date();
+	const checkOut = new Date(checkOutTime ?? (new Date() as any));
 
 	const attendance = await Attendance.findOne({
 		userId: user.userId,
