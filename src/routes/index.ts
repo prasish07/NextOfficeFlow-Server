@@ -14,6 +14,10 @@ import { Router } from "express";
 
 const router = Router();
 
+router.get("/", (req, res) => {
+	res.send("You have entered nextofficeflow server");
+});
+
 router.use(auth);
 router.use(employee);
 router.use(project);
