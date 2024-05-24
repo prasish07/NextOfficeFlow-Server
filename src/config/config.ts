@@ -16,6 +16,7 @@ const GOOGLE_REDIRECT = process.env.GOOGLE_REDIRECT;
 const email = process.env.email;
 const password = process.env.password;
 const githubToken = process.env.GITHUB_TOKEN;
+const isProduction = process.env.NODE_ENV === "production";
 
 export const config = {
 	mongo: {
@@ -39,4 +40,5 @@ export const config = {
 		availableLeaves: 12,
 	},
 	githubToken,
+	isProduction,
 };
