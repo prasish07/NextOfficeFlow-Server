@@ -32,7 +32,11 @@ const port = config.server.port;
 app.use(helmet());
 app.use(
 	cors({
-		origin: ["http://localhost:3000", "http://localhost:5001"],
+		origin: [
+			"http://localhost:3000",
+			"http://localhost:5001",
+			"https://nextofficeflow.onrender.com",
+		],
 		methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
 		allowedHeaders: ["Content-Type", "Authorization"],
 		credentials: true,
