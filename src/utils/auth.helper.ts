@@ -41,9 +41,9 @@ export const attachCookiesToResponse = (
 	const options = {
 		expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
 		httpOnly: true,
-		secure: true,
+		secure: isProduction,
 		signed: true,
-		domain: isProduction ? "https://nextofficeflow.onrender.com" : "localhost",
+		domain: isProduction ? "nextofficeflow.onrender.com" : "localhost",
 		path: "/",
 	};
 	res.cookie("token", token, options);

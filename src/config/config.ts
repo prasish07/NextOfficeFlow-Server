@@ -16,7 +16,7 @@ const GOOGLE_REDIRECT = process.env.GOOGLE_REDIRECT;
 const email = process.env.email;
 const password = process.env.password;
 const githubToken = process.env.GITHUB_TOKEN;
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = process.env.type === "production";
 
 export const config = {
 	mongo: {
