@@ -22,8 +22,6 @@ export const validateToken = async (
 	const token =
 		req.signedCookies.token || req.headers.authorization?.split(" ")[1];
 
-	console.log(token);
-
 	if (!token) {
 		return next(
 			new customAPIErrors(
