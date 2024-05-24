@@ -95,6 +95,7 @@ export const login = async (req: Request, res: Response) => {
 		role: user.role,
 		verified: user.verified,
 		isFirstTimePasswordChange: user.isFirstTimePasswordChange,
+		token: token,
 	});
 };
 
