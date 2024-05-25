@@ -466,8 +466,6 @@ export const autoNotifyPMAdminAndAssigneeEmployeeAboutDueProject = async () => {
 			new Date(project.endDate) < new Date() &&
 			project.status !== "overdue"
 		) {
-			const PMName = await Employee.findOne({ userId: project.userId });
-
 			createNotificationByRole({
 				message: `Project with title ${project.title} is overdue`,
 				role: "admin",
@@ -476,7 +474,6 @@ export const autoNotifyPMAdminAndAssigneeEmployeeAboutDueProject = async () => {
 			});
 
 			const users = project.assigneeId || [];
-			users.push(project.userId);
 
 			users.forEach((userId: any) => {
 				createNotification({
@@ -519,8 +516,6 @@ export const autoNotifyPMAdminAndAssigneeEmployeeAboutDueProjectOneWeekBefore =
 				projectEndDate >= new Date() &&
 				project.status !== "overdue"
 			) {
-				const PMName = await Employee.findOne({ userId: project.userId });
-
 				createNotificationByRole({
 					message: `Project with title ${project.title} is due in one week`,
 					role: "admin",
@@ -529,7 +524,6 @@ export const autoNotifyPMAdminAndAssigneeEmployeeAboutDueProjectOneWeekBefore =
 				});
 
 				const users = project.assigneeId || [];
-				users.push(project.userId);
 
 				users.forEach((userId: any) => {
 					createNotification({
@@ -540,7 +534,6 @@ export const autoNotifyPMAdminAndAssigneeEmployeeAboutDueProjectOneWeekBefore =
 						userId: userId,
 					});
 				});
-				console.log("sending message");
 			}
 		});
 	};
