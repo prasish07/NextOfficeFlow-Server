@@ -245,7 +245,7 @@ export const getProjectStatusCount = async (req: Request, res: Response) => {
 	projects.forEach((project) => {
 		if (project.status === "To-Do") {
 			toDo++;
-		} else if (project.status === "onGoing") {
+		} else if (project.status === "in-progress") {
 			onGoing++;
 		} else if (project.status === "completed") {
 			completed++;
