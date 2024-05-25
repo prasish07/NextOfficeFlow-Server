@@ -315,6 +315,15 @@ export const updateRequest = async (req: Request, res: Response) => {
 		});
 	}
 
+	if (request.requestedTo && request.pmStatus === "rejected") {
+		createNotification({
+			message: `Your ${request.requestType} request has been rejected`,
+			link: `/request/my-request`,
+			type: "request",
+			userId: request.userId,
+		});
+	}
+
 	if (req.body.status === "approved") {
 		if (request.requestType === "leave" && request.leaveId.type === "leave") {
 			const leaveDetails = await LeaveDetail.findOne({
