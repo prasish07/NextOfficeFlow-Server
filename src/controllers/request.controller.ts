@@ -362,6 +362,7 @@ export const updateRequest = async (req: Request, res: Response) => {
 export const deleteRequest = async (req: Request, res: Response) => {
 	const { requestId } = req.params;
 	const request = await Requests.findById(requestId);
+
 	if (!request) {
 		throw new customAPIErrors(
 			`Request with id ${requestId} not found`,
@@ -369,7 +370,13 @@ export const deleteRequest = async (req: Request, res: Response) => {
 		);
 	}
 
-	if (request.pmStatus !== "pending") {
+	const user = await User.findById(request.userId);
+
+	if (!user) {
+		throw new customAPIErrors(`User not found`, StatusCodes.NOT_FOUND);
+	}
+
+	if (request.pmStatus !== "pending" && user.role !== "project manager") {
 		throw new customAPIErrors(
 			`Non pending request cannot be deleted`,
 			StatusCodes.BAD_REQUEST
