@@ -17,9 +17,39 @@ import { CREATE_REPO } from "../contants/conts";
 
 export const createProject = async (req: Request, res: Response) => {
 	const body = req.body;
+	const { title, description, startDate, endDate, progress, estimatedTime } =
+		body;
 
 	const user = (req as CustomerRequestInterface).user;
 	const userId = user.userId;
+
+	if (!title || !description || !startDate || !endDate) {
+		throw new customAPIErrors(
+			"Please provide title, description, startDate and endDate",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (!progress || !estimatedTime) {
+		throw new customAPIErrors(
+			"Please provide progress and estimatedTime",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (body.estimatedTime && parseInt(body.estimatedTime) < 0) {
+		throw new customAPIErrors(
+			"Estimated time cannot be negative",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (body.progress && parseInt(body.progress) < 0) {
+		throw new customAPIErrors(
+			"Progress cannot be negative",
+			StatusCodes.BAD_REQUEST
+		);
+	}
 
 	const project = await Project.create({
 		...body,
@@ -106,6 +136,21 @@ export const updateProject = async (req: Request, res: Response) => {
 
 	if (!projectId) {
 		throw new customAPIErrors("Project Id not found", StatusCodes.NOT_FOUND);
+	}
+
+	// Check if estimatedTime is in negative
+	if (projectInfo.estimatedTime && parseInt(projectInfo.estimatedTime) < 0) {
+		throw new customAPIErrors(
+			"Estimated time cannot be negative",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	if (projectInfo.progress && parseInt(projectInfo.progress) < 0) {
+		throw new customAPIErrors(
+			"Progress cannot be negative",
+			StatusCodes.BAD_REQUEST
+		);
 	}
 
 	const project = await Project.findByIdAndUpdate(projectId, projectInfo, {

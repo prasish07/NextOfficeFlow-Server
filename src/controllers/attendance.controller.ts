@@ -650,7 +650,7 @@ export const getTodayUnCheckedEmployees = async (
 				},
 			});
 
-			if (!employeeCheckInRecord) {
+			if (!employeeCheckInRecord || !employeeCheckInRecord.checkIn) {
 				return employee;
 			}
 		})

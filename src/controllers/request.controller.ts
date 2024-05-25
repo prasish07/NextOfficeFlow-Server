@@ -288,7 +288,9 @@ export const getRequest = async (req: Request, res: Response) => {
 
 export const updateRequest = async (req: Request, res: Response) => {
 	const { requestId } = req.params;
-	const request: any = await Requests.findByIdAndUpdate(requestId, req.body)
+	const request: any = await Requests.findByIdAndUpdate(requestId, req.body, {
+		new: true,
+	})
 		.populate("leaveId")
 		.populate("allowanceId")
 		.populate("overtimeId")

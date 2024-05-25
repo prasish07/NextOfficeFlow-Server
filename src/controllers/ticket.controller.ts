@@ -15,8 +15,17 @@ import {
 
 export const createTicket = async (req: Request, res: Response) => {
 	const detail = req.body;
+	const { dueDate, estimatedTime } = detail;
 	const user = (req as CustomerRequestInterface).user;
 	const { attachments } = detail;
+
+	if (!dueDate || !estimatedTime) {
+		throw new customAPIErrors(
+			"Due date and estimated time is required",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
 	if (attachments) {
 		const attachmentIds = await Promise.all(
 			attachments.map(async (attachment: any) => {
@@ -29,6 +38,13 @@ export const createTicket = async (req: Request, res: Response) => {
 			})
 		);
 		detail.attachments = attachmentIds;
+	}
+
+	if (parseInt(detail.estimatedTime) < 0) {
+		throw new customAPIErrors(
+			"Estimated time can not be negative",
+			StatusCodes.BAD_REQUEST
+		);
 	}
 
 	const ticket = new Ticket({
@@ -121,6 +137,13 @@ export const updateTicket = async (req: Request, res: Response) => {
 	const { userId, role } = (req as CustomerRequestInterface).user;
 	let newAttachments: any = [];
 	let newComments: any = [];
+
+	if (parseInt(detail.estimatedTime) < 0) {
+		throw new customAPIErrors(
+			"Estimated time can not be negative",
+			StatusCodes.BAD_REQUEST
+		);
+	}
 
 	const ticket = await Ticket.findById(ticketId).populate("attachments");
 
