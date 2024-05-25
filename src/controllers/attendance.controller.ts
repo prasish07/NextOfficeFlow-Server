@@ -48,7 +48,7 @@ export const checkIn = async (req: Request, res: Response) => {
 	if (existingAttendance) {
 		existingAttendance.type = type;
 		existingAttendance.location = location;
-		existingAttendance.checkIn = checkIn.toISOString();
+		existingAttendance.checkIn = new Date().toISOString();
 		existingAttendance.lat = lat;
 		existingAttendance.lng = lng;
 		existingAttendance.checkInStatus = status;
@@ -59,7 +59,7 @@ export const checkIn = async (req: Request, res: Response) => {
 		const attendance = new Attendance({
 			userId: user.userId,
 			date: new Date(),
-			checkIn: checkIn.toISOString(),
+			checkIn: new Date().toISOString(),
 			type,
 			location,
 			lat,
@@ -207,7 +207,7 @@ export const checkOut = async (req: Request, res: Response) => {
 		);
 	}
 
-	attendance.checkOut = checkOut.toISOString();
+	attendance.checkOut = new Date().toISOString();
 
 	const isOvertime = checkOut.getHours() >= 17;
 	const status = checkOut.getHours() < 17 ? "early" : "onTime";
