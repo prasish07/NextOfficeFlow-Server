@@ -135,11 +135,6 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
 		`https://oauth2.googleapis.com/tokeninfo?access_token=${tokens}`
 	);
 
-	// const profileResponse = await axios.get(
-	// 	"https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=" +
-	// 		tokens
-	// );
-
 	const googleUserInfo = response.data;
 
 	const email = googleUserInfo.email;
@@ -162,9 +157,9 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
 
 	const tokenPayload = { userId: user._id, role: user.role };
 
-	attachCookiesToResponse(res, tokenPayload);
+	const token = createToken(tokenPayload);
 
-	res.json({ ...tokenPayload, message: "Login successful" });
+	res.json({ ...tokenPayload, token, message: "Login successful" });
 };
 
 export const getUserInfo = async (req: Request, res: Response) => {
