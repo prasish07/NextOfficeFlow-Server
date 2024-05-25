@@ -509,7 +509,8 @@ export const autoNotifyPMAdminAndAssigneeEmployeeAboutDueProject = async () => {
 	projects.forEach(async (project) => {
 		if (
 			new Date(project.endDate) < new Date() &&
-			project.status !== "overdue"
+			project.status !== "overdue" &&
+			project.status !== "cancelled"
 		) {
 			createNotificationByRole({
 				message: `Project with title ${project.title} is overdue`,

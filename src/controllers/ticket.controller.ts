@@ -385,7 +385,11 @@ export const autoNotifyAdminAndAssigneeAboutOverdueTickets = async () => {
 	}
 
 	tickets.forEach(async (ticket) => {
-		if (new Date(ticket.dueDate) < new Date() && ticket.status !== "Overdue") {
+		if (
+			new Date(ticket.dueDate) < new Date() &&
+			ticket.status !== "Overdue" &&
+			ticket.status !== "Cancelled"
+		) {
 			// Notify admin
 			createNotificationByRole({
 				message: `Ticket with title ${ticket.title} is overdue`,
