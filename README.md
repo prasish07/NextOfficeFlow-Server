@@ -1,4 +1,6 @@
-# NextOfficeFlow Server containing features like appraisal management, attendance management, employee management, event management, notification management, project management and ticket management and github integration
+# NextOfficeFlow Server 
+
+**Containing features like appraisal management, attendance management, employee management, event management, notification management, project management and ticket management and github integration**
 
 ## Installation
 
