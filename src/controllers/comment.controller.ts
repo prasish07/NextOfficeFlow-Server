@@ -12,8 +12,7 @@ import Ticket from "../modals/ticket";
 export const createComment = async (req: Request, res: Response) => {
 	const body = req.body;
 
-	const user = (req as CustomerRequestInterface).user;
-	const UserId = user.userId;
+	const { userId } = (req as CustomerRequestInterface).user;
 
 	if (!body.comment) {
 		throw new customAPIErrors(
@@ -23,7 +22,7 @@ export const createComment = async (req: Request, res: Response) => {
 	}
 
 	const commentCreate = await Comment.create({
-		UserId,
+		userId,
 		...body,
 	});
 
@@ -53,15 +52,8 @@ export const getProjectComment = async (req: Request, res: Response) => {
 	const { projectId } = req.params;
 
 	const comments = await Comment.find({ projectId: projectId }).populate(
-		"UserId"
+		"userId"
 	);
-
-	if (!comments) {
-		throw new customAPIErrors(
-			`No comment found with id: ${projectId}`,
-			StatusCodes.NOT_FOUND
-		);
-	}
 
 	res.status(StatusCodes.OK).json({ comments });
 };
@@ -70,13 +62,6 @@ export const getTicketComment = async (req: Request, res: Response) => {
 	const { ticketId } = req.params;
 
 	const comments = await Comment.find({ ticketId: ticketId });
-
-	if (!comments) {
-		throw new customAPIErrors(
-			`No comment found with id: ${ticketId}`,
-			StatusCodes.NOT_FOUND
-		);
-	}
 
 	res.status(StatusCodes.OK).json({ comments });
 };

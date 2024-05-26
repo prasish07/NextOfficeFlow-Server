@@ -12,6 +12,7 @@ import {
 	getUserInformation,
 	getAllUserWithEmployeeRole,
 	getEmployeeByUserId,
+	sentResignationMail,
 } from "../controllers/employee.controller";
 
 const router = Router();
@@ -21,7 +22,7 @@ router
 	.post(validateToken, authorizePermission("HR", "admin"), createEmployee)
 	.get(getAllEmployees);
 
-router.route("/employee/me").get(validateToken, getEmployeeByUserId);
+router.route("/employee/me/:id?").get(validateToken, getEmployeeByUserId);
 
 router
 	.route("/user/information/:userId")
@@ -30,9 +31,21 @@ router
 router.route("/employee/all").get(validateToken, getAllUserWithEmployeeRole);
 
 router
+	.route("/user/resignation")
+	.post(
+		validateToken,
+		authorizePermission("employee", "project manager"),
+		sentResignationMail
+	);
+
+router
 	.route("/employee/:employeeId")
 	.get(validateToken, getEmployee)
-	.patch(validateToken, authorizePermission("HR", "admin"), updateEmployee)
+	.patch(
+		validateToken,
+		authorizePermission("HR", "admin", "project manager", "employee"),
+		updateEmployee
+	)
 	.delete(validateToken, authorizePermission("HR", "admin"), deleteEmployee);
 
 export default router;

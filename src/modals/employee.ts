@@ -7,7 +7,6 @@ export interface IEmployee extends mongoose.Document {
 	team: string;
 	manager: string;
 	description: string;
-	githubUsername: string;
 	appraisalHistory: string[];
 	salary: number;
 	startDate: Date;
@@ -18,15 +17,7 @@ export interface IEmployee extends mongoose.Document {
 	status: string;
 	jobDescription: string;
 	documents: string[];
-}
-
-export interface ILeaveDetail extends mongoose.Document {
-	userId: string;
-	availableLeaves: number;
-	leavesTaken: number;
-	year: number;
-	totalPaidLeave: number;
-	totalUnpaidLeaveTaken: number;
+	profilePicture: string;
 }
 
 const employeeSchema = new mongoose.Schema({
@@ -36,7 +27,6 @@ const employeeSchema = new mongoose.Schema({
 	team: { type: String },
 	manager: { type: String },
 	description: { type: String },
-	githubUsername: { type: String },
 	appraisalHistory: { type: Array },
 	salary: { type: Number, required: true },
 	startDate: { type: Date, required: true },
@@ -54,14 +44,24 @@ const employeeSchema = new mongoose.Schema({
 			type: String,
 		},
 	],
+	profilePicture: { type: String },
 });
+
+export interface ILeaveDetail extends mongoose.Document {
+	userId: string;
+	availableLeaves: number;
+	leavesTaken: number;
+	year: number;
+	totalPaidLeaveTaken: number;
+	totalUnpaidLeaveTaken: number;
+}
 
 const leaveDetailSchema = new mongoose.Schema({
 	userId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
-	totalPaidLeave: { type: Number },
+	totalPaidLeaveTaken: { type: Number },
 	availableLeaves: { type: Number },
 	leavesTaken: { type: Number },
 	year: { type: Number },

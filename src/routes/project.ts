@@ -11,6 +11,11 @@ import {
 	getProject,
 	getProjectStatusCount,
 	addAssigneeToProject,
+	addAttachmentToProject,
+	linkGitHub,
+	CreateAndLinkGitHub,
+	removeAttachmentFromProject,
+	RemoveProjects,
 } from "../controllers/project.controller";
 
 import { getProjectTickets } from "../controllers/ticket.controller";
@@ -36,6 +41,22 @@ router
 		validateToken,
 		authorizePermission("employee", "admin", "project manager"),
 		getProjectStatusCount
+	);
+
+router
+	.route("/project/:projectId/github")
+	.patch(
+		validateToken,
+		authorizePermission("project manager", "admin"),
+		linkGitHub
+	);
+
+router
+	.route("/project/:projectId/github")
+	.put(
+		validateToken,
+		authorizePermission("project manager", "admin"),
+		CreateAndLinkGitHub
 	);
 
 router
@@ -70,6 +91,30 @@ router
 		validateToken,
 		authorizePermission("employee", "admin", "project manager"),
 		getProjectTickets
+	);
+
+router
+	.route("/project/attachment")
+	.post(
+		validateToken,
+		authorizePermission("employee", "project manager", "admin"),
+		addAttachmentToProject
+	);
+
+router
+	.route("/project/:projectId/:attachmentId")
+	.delete(
+		validateToken,
+		authorizePermission("project manager"),
+		removeAttachmentFromProject
+	);
+
+router
+	.route("/project/removeMany")
+	.post(
+		validateToken,
+		authorizePermission("project manager", "admin"),
+		RemoveProjects
 	);
 
 export default router;

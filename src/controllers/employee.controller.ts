@@ -6,6 +6,11 @@ import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
 import { hashPassword } from "../utils/auth.helper";
+import {
+	createNotification,
+	createNotificationByRole,
+} from "../utils/notification.helper";
+import { sentEmail, sentEmailFrom } from "../utils/mailTransporter";
 
 export type employeeProps = {
 	name: string;
@@ -30,7 +35,7 @@ type EmployeeDocument = Document & employeeProps;
 const createLeaveDetails = async (userId: string) => {
 	const leaveDetail = new LeaveDetail({
 		userId,
-		totalPaidLeave: config.leaveDetails.availableLeaves,
+		totalPaidLeaveTaken: 0,
 		availableLeaves: config.leaveDetails.availableLeaves,
 		leavesTaken: 0,
 		totalUnpaidLeaveTaken: 0,
@@ -126,6 +131,20 @@ export const createEmployee = async (req: Request, res: Response) => {
 
 	await createLeaveDetails(userEmployee._id);
 
+	createNotificationByRole({
+		message: `New employee added: <strong>${name}</strong>`,
+		role: "admin",
+		link: "/employee",
+		type: "employee",
+	});
+
+	createNotification({
+		message: `Welcome to NextOfficeFlow: <strong>${name}</strong>`,
+		link: "/employee/my-profile",
+		type: "employee",
+		userId: updatedEmployee.userId,
+	});
+
 	res.status(StatusCodes.CREATED).json({
 		message: "Employee created successfully",
 		data: updatedEmployee,
@@ -165,6 +184,22 @@ export const updateEmployee = async (req: Request, res: Response) => {
 	if (!employeeUpdate || !userUpdate) {
 		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
 	}
+
+	// create notification for admin and hr about employee update
+	createNotificationByRole({
+		message: `Employee updated: <strong>${employeeUpdate.name}</strong>`,
+		role: "admin",
+		link: "/employee",
+		type: "employee",
+	});
+
+	createNotificationByRole({
+		message: `Employee updated: <strong>${employeeUpdate.name}</strong>`,
+		role: "HR",
+		link: "/employee",
+		type: "employee",
+	});
+
 	res.status(StatusCodes.OK).json({
 		message: "Employee updated successfully",
 		data: employeeUpdate,
@@ -178,7 +213,7 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 		throw new customAPIErrors("Employee Id not found", StatusCodes.NOT_FOUND);
 	}
 
-	const employeeDelete: any = await Employee.findByIdAndDelete(employeeId);
+	const employeeDelete = await Employee.findByIdAndRemove(employeeId);
 
 	if (!employeeDelete) {
 		throw new customAPIErrors("Employee not found", StatusCodes.NOT_FOUND);
@@ -189,6 +224,20 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 	if (!userDelete) {
 		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
 	}
+
+	createNotificationByRole({
+		message: `Employee remove: <strong>${employeeDelete.name}</strong>`,
+		role: "admin",
+		link: "/employee",
+		type: "employee",
+	});
+
+	createNotificationByRole({
+		message: `Employee remove: <strong>${employeeDelete.name}</strong>`,
+		role: "HR",
+		link: "/employee",
+		type: "employee",
+	});
 
 	res.status(StatusCodes.OK).json({
 		message: "Employee deleted successfully",
@@ -230,10 +279,40 @@ export const getEmployee = async (req: Request, res: Response) => {
 
 export const getUserInformation = async (req: Request, res: Response) => {
 	const { userId } = req.params;
-	const userInfo = await Employee.findOne({ userId }).populate("userId");
+	const userInfo: any = await Employee.findOne({ userId }).populate("userId");
+	const currentYear = new Date().getFullYear();
+
 	if (!userInfo) {
 		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
 	}
+
+	if (
+		(userInfo.userId as any).role === "employee" ||
+		(userInfo.userId as any).role === "project manager"
+	) {
+		const leaveDetail = await LeaveDetail.findOne({
+			userId: userId,
+			year: currentYear,
+		});
+
+		if (!leaveDetail) {
+			throw new customAPIErrors(
+				"Leave details not found",
+				StatusCodes.NOT_FOUND
+			);
+		}
+		return res.status(StatusCodes.OK).json({
+			message: "User found",
+			data: {
+				...userInfo._doc,
+				totalPaidLeaveTaken: leaveDetail.totalPaidLeaveTaken,
+				availableLeaves: leaveDetail.availableLeaves,
+				leavesTaken: leaveDetail.leavesTaken,
+				totalUnpaidLeaveTaken: leaveDetail.totalUnpaidLeaveTaken,
+			},
+		});
+	}
+
 	res.status(StatusCodes.OK).json({
 		message: "User found",
 		data: userInfo,
@@ -244,7 +323,11 @@ export const getAllUserWithEmployeeRole = async (
 	req: Request,
 	res: Response
 ) => {
-	const users = await User.find({ role: "employee" });
+	let { role } = req.query;
+	if (!role) {
+		role = ["project manager", "employee"];
+	}
+	const users = await User.find({ role: { $in: role } });
 	if (!users.length) {
 		throw new customAPIErrors("No user found", StatusCodes.NOT_FOUND);
 	}
@@ -286,18 +369,111 @@ export const getEmployeeTotalLeaveDetails = async (
 };
 
 export const createLeaveDetailEveryYear = async () => {
-	const employees = await Employee.find();
+	const employees = await Employee.find().populate("userId");
 	const currentYear = new Date().getFullYear();
 
 	await Promise.all(
-		employees.map(async (employee) => {
-			const leaveDetail = await LeaveDetail.findOne({
-				userId: employee.userId,
-				year: currentYear,
-			});
-			if (!leaveDetail) {
-				await createLeaveDetails(employee.userId);
+		employees.map(async (employee: any) => {
+			if (
+				employee.userId.role === "employee" ||
+				employee.userId.role === "project manager"
+			) {
+				const leaveDetail = await LeaveDetail.findOne({
+					userId: employee.userId,
+					year: currentYear,
+				});
+				if (!leaveDetail) {
+					await createLeaveDetails(employee.userId);
+				}
 			}
 		})
 	);
+
+	createNotification({
+		message: `Leave details Updated for year: <strong>${currentYear}</strong>`,
+		link: "/leave",
+		type: "leave",
+		userId: "",
+	});
+};
+
+export const sentResignationMail = async (req: Request, res: Response) => {
+	const { email, content } = req.body;
+
+	if (!email || !content) {
+		throw new customAPIErrors(
+			"Email and content is required",
+			StatusCodes.BAD_REQUEST
+		);
+	}
+
+	const user = (req as CustomerRequestInterface).user;
+
+	const userInfo = await User.findById(user.userId);
+
+	if (!userInfo) {
+		throw new customAPIErrors("User not found", StatusCodes.NOT_FOUND);
+	}
+	sentEmail(email, content, `Resignation from ${userInfo.email}`);
+
+	res.status(StatusCodes.OK).json({
+		message: "Email sent successfully",
+	});
+};
+
+export const notifyAdminAndHRAboutEmployeeEndDates = async () => {
+	const employees = await Employee.find();
+
+	if (!employees || employees.length === 0) {
+		throw new customAPIErrors(`No employees found`, StatusCodes.NOT_FOUND);
+	}
+
+	const oneMonthFromNow = new Date();
+	oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+	oneMonthFromNow.setHours(0, 0, 0, 0);
+
+	const oneDayFromNow = new Date();
+	oneDayFromNow.setDate(oneDayFromNow.getDate() + 1);
+	oneDayFromNow.setHours(0, 0, 0, 0);
+
+	employees.forEach(async (employee) => {
+		const employeeEndDate = new Date(employee.endDate);
+		employeeEndDate.setHours(0, 0, 0, 0);
+
+		if (employeeEndDate.getTime() === oneMonthFromNow.getTime()) {
+			createNotificationByRole({
+				message: `Employee with name ${employee.name} is ending their term in one month`,
+				role: "admin",
+				link: `/employee`,
+				type: "employee",
+			});
+
+			createNotificationByRole({
+				message: `Employee with name ${employee.name} is ending their term in one month`,
+				role: "HR",
+				link: `/employee`,
+				type: "employee",
+			});
+
+			console.log(`One-month notification sent for employee ${employee.name}`);
+		}
+
+		if (employeeEndDate.getTime() === oneDayFromNow.getTime()) {
+			createNotificationByRole({
+				message: `Employee with name ${employee.name} is ending their term in one day`,
+				role: "admin",
+				link: `/employee`,
+				type: "employee",
+			});
+
+			createNotificationByRole({
+				message: `Employee with name ${employee.name} is ending their term in one day`,
+				role: "HR",
+				link: `/employee`,
+				type: "employee",
+			});
+
+			console.log(`One-day notification sent for employee ${employee.name}`);
+		}
+	});
 };

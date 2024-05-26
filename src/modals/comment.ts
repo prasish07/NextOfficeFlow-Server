@@ -2,24 +2,19 @@ import mongoose from "mongoose";
 
 export interface IComment extends mongoose.Document {
 	comment: string;
-	UserId: string;
+	userId: string;
 	projectId: string;
-	ticketId: string;
 }
 
 const commentSchema = new mongoose.Schema({
 	comment: { type: String, required: true },
-	UserId: {
+	userId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "User",
 	},
 	projectId: {
 		type: mongoose.Schema.Types.ObjectId,
 		ref: "Project",
-	},
-	ticketId: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: "Ticket",
 	},
 });
 

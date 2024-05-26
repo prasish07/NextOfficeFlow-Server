@@ -5,25 +5,44 @@ import { config } from "../config/config";
 import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import User from "../modals/user";
 import CalendarEvent from "../modals/calender";
+import Notification from "../modals/notification";
+import { createNotificationAll } from "../utils/notification.helper";
+import { dateFormatter } from "../utils/helper";
 
 export const createEvent = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
 	const { title, description, start, end, type } = req.body;
-	const event = new CalendarEvent({
-		title,
-		description,
-		start,
-		end,
-		type,
-		createdBy: user.userId,
-	});
+	try {
+		const event = new CalendarEvent({
+			title,
+			description,
+			start,
+			end,
+			type,
+			createdBy: user.userId,
+		});
 
-	await event.save();
+		await event.save();
 
-	return res.status(StatusCodes.CREATED).json({
-		message: "Event created successfully",
-		event,
-	});
+		// Create a notification for all the user about this event
+		createNotificationAll({
+			message: `New event created: <strong>${title}</strong> on ${dateFormatter(
+				start
+			)} to ${dateFormatter(end)}`,
+			link: `/calendar`,
+			type: "event",
+		});
+
+		return res.status(StatusCodes.CREATED).json({
+			message: "Event created successfully",
+			event,
+		});
+	} catch (error) {
+		console.error("Error creating event:", error);
+		return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+			error: "Internal Server Error",
+		});
+	}
 };
 
 export const getEvents = async (req: Request, res: Response) => {
@@ -67,6 +86,13 @@ export const updateEvent = async (req: Request, res: Response) => {
 		);
 	}
 
+	// Create a notification for all the user about this event
+	createNotificationAll({
+		message: `Event updated: <strong>${updateEvent.title}</strong>`,
+		link: `/calendar`,
+		type: "event",
+	});
+
 	return res.status(StatusCodes.OK).json({
 		message: "Event updated successfully",
 		updateEvent,
@@ -82,6 +108,14 @@ export const deleteEvent = async (req: Request, res: Response) => {
 			StatusCodes.NOT_FOUND
 		);
 	}
+
+	// Create a notification for all the user about this event
+	createNotificationAll({
+		message: `Event deleted: <strong>${event.title}</strong>`,
+		link: `/calendar`,
+		type: "event",
+	});
+
 	return res.status(StatusCodes.OK).json({
 		message: "Event deleted successfully",
 	});
@@ -89,8 +123,6 @@ export const deleteEvent = async (req: Request, res: Response) => {
 
 export const getAllEvents = async (req: Request, res: Response) => {
 	const { start, end } = req.query;
-
-	console.log(req.query);
 
 	let filter: any = {};
 
@@ -118,7 +150,7 @@ export const getAllEvents = async (req: Request, res: Response) => {
 		}
 	}
 
-	const events = await CalendarEvent.find(filter);
+	const events = await CalendarEvent.find(filter).sort({ start: -1 });
 
 	res.status(StatusCodes.OK).json({
 		events,
@@ -144,7 +176,7 @@ export const getAllEventsUpcomingTwoMonths = async (
 	};
 
 	try {
-		const events = await CalendarEvent.find(filter);
+		const events = await CalendarEvent.find(filter).sort({ start: 1 });
 
 		res.status(StatusCodes.OK).json({
 			events,

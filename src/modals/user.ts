@@ -4,10 +4,10 @@ export interface IUser extends mongoose.Document {
 	email: string;
 	password: string;
 	role: string;
-	token: string;
-	verificationPin: string;
 	verified: boolean;
+	verificationPin: string;
 	verificationPinExpires: Date;
+	isFirstTimePasswordChange: boolean;
 }
 
 const userSchema = new mongoose.Schema({
@@ -22,10 +22,10 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		default: "employee",
 	},
-	token: { type: String },
 	verificationPin: String,
 	verified: { type: Boolean, default: false },
 	verificationPinExpires: Date,
+	isFirstTimePasswordChange: { type: Boolean, default: false },
 });
 
 const User = mongoose.model<IUser>("User", userSchema);

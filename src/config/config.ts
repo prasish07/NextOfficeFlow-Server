@@ -6,7 +6,7 @@ dotenv.config({ path: absolutePath });
 
 const MONGO_URL = process.env.MONGO_URL || ``;
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_LIFETIME = process.env.JWT_LIFETIME;
@@ -15,6 +15,8 @@ const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const GOOGLE_REDIRECT = process.env.GOOGLE_REDIRECT;
 const email = process.env.email;
 const password = process.env.password;
+const githubToken = process.env.GITHUB_TOKEN;
+const isProduction = process.env.type === "production";
 
 export const config = {
 	mongo: {
@@ -37,4 +39,6 @@ export const config = {
 	leaveDetails: {
 		availableLeaves: 12,
 	},
+	githubToken,
+	isProduction,
 };

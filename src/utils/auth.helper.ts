@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { config } from "../config/config";
 import { Response } from "express";
+import path from "path";
 
 export interface tokenProps {
 	userId: string;
@@ -35,11 +36,15 @@ export const attachCookiesToResponse = (
 	tokenPayload: tokenProps
 ) => {
 	const token = createToken(tokenPayload);
+	const isProduction = config.isProduction;
+
 	const options = {
 		expires: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
 		httpOnly: true,
-		secure: true,
+		secure: isProduction,
 		signed: true,
+		domain: isProduction ? "nextofficeflow.onrender.com" : "localhost",
+		path: "/",
 	};
 	res.cookie("token", token, options);
 };

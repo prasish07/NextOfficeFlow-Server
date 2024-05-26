@@ -14,14 +14,36 @@ import {
 	manualAttendance,
 	getAttendanceByUserId,
 	getAttendanceByUserIdAndToday,
+	getTodayTotalAttendance,
+	getTodayUnCheckedEmployees,
+	getSingleAttendance,
+	updateAttendance,
+	breakManagement,
 } from "../controllers/attendance.controller";
 
 router
 	.route("/attendance/checkin")
-	.post(validateToken, authorizePermission("employee"), checkIn);
+	.post(
+		validateToken,
+		authorizePermission("employee", "project manager"),
+		checkIn
+	);
+
+router
+	.route("/attendance/break")
+	.patch(
+		validateToken,
+		authorizePermission("employee", "project manager"),
+		breakManagement
+	);
+
 router
 	.route("/attendance/checkout")
-	.post(validateToken, authorizePermission("employee"), checkOut);
+	.post(
+		validateToken,
+		authorizePermission("employee", "project manager"),
+		checkOut
+	);
 router
 	.route("/attendance/all")
 	.get(validateToken, authorizePermission("HR", "admin"), getAllTimeAttendance);
@@ -30,11 +52,27 @@ router
 	.post(validateToken, authorizePermission("HR", "admin"), manualAttendance);
 
 router
+	.route("/attendance/manual/:id")
+	.patch(validateToken, authorizePermission("HR", "admin"), updateAttendance);
+
+router
 	.route("/attendance/me/today")
 	.get(validateToken, getAttendanceByUserIdAndToday);
 
 router
 	.route("/attendance/employee/:userId?")
 	.get(validateToken, getAttendanceByUserId);
+
+router
+	.route("/attendance/today/total")
+	.get(validateToken, getTodayTotalAttendance);
+
+router
+	.route("/attendance/today/uncheck")
+	.get(validateToken, getTodayUnCheckedEmployees);
+
+router
+	.route("/attendance/:id")
+	.get(validateToken, authorizePermission("HR", "admin"), getSingleAttendance);
 
 export default router;

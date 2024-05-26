@@ -3,12 +3,15 @@ import mongoose from "mongoose";
 export interface IRequest extends mongoose.Document {
 	userId: string;
 	requestType: string;
-	status: string;
 	createdAt: Date;
 	updatedAt: Date;
 	leaveId: string;
 	allowanceId: string;
 	overtimeId: string;
+	attendanceId: string;
+	requestedTo: string;
+	pmStatus: string;
+	status: string;
 }
 
 export interface ILeave extends mongoose.Document {
@@ -16,7 +19,6 @@ export interface ILeave extends mongoose.Document {
 	startDate: Date;
 	endDate: Date;
 	reason: string;
-	status: string;
 }
 
 export interface IAllowance extends mongoose.Document {
@@ -40,9 +42,11 @@ export interface IAttendance extends mongoose.Document {
 const requestSchema = new mongoose.Schema({
 	userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 	requestType: { type: String, required: true },
-	status: { type: String, required: true, default: "pending" },
+	pmStatus: { type: String, default: "pending" },
+	status: { type: String, default: "pending" },
 	createdAt: { type: Date, default: Date.now },
 	updatedAt: { type: Date, default: Date.now },
+	requestedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 	leaveId: { type: mongoose.Schema.Types.ObjectId, ref: "Leave" },
 	allowanceId: { type: mongoose.Schema.Types.ObjectId, ref: "Allowance" },
 	overtimeId: { type: mongoose.Schema.Types.ObjectId, ref: "Overtime" },
@@ -84,7 +88,7 @@ export const Allowance = mongoose.model<IAllowance>(
 	allowanceSchema
 );
 export const Overtime = mongoose.model<IOvertime>("Overtime", overtimeSchema);
-export const Attendance = mongoose.model<IAttendance>(
+export const AttendanceRequest = mongoose.model<IAttendance>(
 	"AttendanceRequest",
 	attendanceSchema
 );

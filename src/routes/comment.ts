@@ -14,25 +14,33 @@ const router = Router();
 
 router
 	.route("/comment")
-	.post(validateToken, authorizePermission("employee", "admin"), createComment);
+	.post(
+		validateToken,
+		authorizePermission("employee", "admin", "project manager"),
+		createComment
+	);
 
 router
 	.route("/project/:projectId/comments")
 	.get(
 		validateToken,
-		authorizePermission("employee", "admin"),
+		authorizePermission("employee", "admin", "project manager"),
 		getProjectComment
 	);
 router
 	.route("/comment/ticket")
 	.get(
 		validateToken,
-		authorizePermission("employee", "admin"),
+		authorizePermission("employee", "admin", "project manager"),
 		getTicketComment
 	);
 
 router
 	.route("/comment/:commentId")
-	.delete(validateToken, authorizePermission("HR", "admin"), deleteComment);
+	.delete(
+		validateToken,
+		authorizePermission("HR", "admin", "project manager"),
+		deleteComment
+	);
 
 export default router;

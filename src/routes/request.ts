@@ -15,6 +15,7 @@ import {
 	getRequests,
 	updateRequest,
 	getUserRequestCount,
+	getPMRequestedRequest,
 } from "../controllers/request.controller";
 
 router
@@ -27,17 +28,33 @@ router
 	.get(validateToken, authorizePermission("admin", "HR"), getUserRequestCount);
 
 router
+	.route("/request/pm/request")
+	.get(
+		validateToken,
+		authorizePermission("project manager"),
+		getPMRequestedRequest
+	);
+
+router
 	.route("/request/count/:countType")
 	.get(validateToken, getUserRequestCount);
 
 router
 	.route("/request/:requestId")
 	.get(validateToken, getRequest)
-	.patch(validateToken, authorizePermission("admin", "HR"), updateRequest)
-	.delete(validateToken, authorizePermission("admin", "HR"), deleteRequest);
+	.patch(
+		validateToken,
+		authorizePermission("admin", "HR", "project manager"),
+		updateRequest
+	)
+	.delete(validateToken, deleteRequest);
 
 router
 	.route("/requests")
-	.get(validateToken, authorizePermission("admin", "HR"), getAllRequests);
+	.get(
+		validateToken,
+		authorizePermission("admin", "HR", "project manager"),
+		getAllRequests
+	);
 
 export default router;

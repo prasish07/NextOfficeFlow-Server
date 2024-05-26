@@ -16,7 +16,7 @@ router
 	.route("/attachment")
 	.post(
 		validateToken,
-		authorizePermission("employee", "admin"),
+		authorizePermission("employee", "admin", "project manager"),
 		createAttachment
 	);
 
@@ -24,14 +24,14 @@ router
 	.route("/project/:projectId/attachment")
 	.get(
 		validateToken,
-		authorizePermission("employee", "admin"),
+		authorizePermission("employee", "admin", "project manager"),
 		getProjectAttachment
 	);
 router
 	.route("/ticket/:ticket/attachment")
 	.get(
 		validateToken,
-		authorizePermission("employee", "admin"),
+		authorizePermission("employee", "admin", "project manager"),
 		getTicketAttachment
 	);
 

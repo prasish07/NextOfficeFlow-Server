@@ -14,6 +14,7 @@ import { CustomerRequestInterface } from "../middleware/auth.middleware";
 import { jwtDecode } from "jwt-decode";
 import { generatePin, sentEmail } from "../utils/mailTransporter";
 import axios from "axios";
+import Employee from "../modals/employee";
 
 export const login = async (req: Request, res: Response) => {
 	const { email, password } = req.body;
@@ -69,6 +70,17 @@ export const login = async (req: Request, res: Response) => {
 			verified: false,
 			userId: user._id,
 			role: user.role,
+			isFirstTimePasswordChange: user.isFirstTimePasswordChange,
+		});
+	}
+
+	if (!user.isFirstTimePasswordChange) {
+		return res.status(StatusCodes.OK).json({
+			message: "Please change your password",
+			verified: true,
+			userId: user._id,
+			role: user.role,
+			isFirstTimePasswordChange: user.isFirstTimePasswordChange,
 		});
 	}
 
@@ -82,6 +94,8 @@ export const login = async (req: Request, res: Response) => {
 		userId: user._id,
 		role: user.role,
 		verified: user.verified,
+		isFirstTimePasswordChange: user.isFirstTimePasswordChange,
+		token: token,
 	});
 };
 
@@ -121,13 +135,6 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
 		`https://oauth2.googleapis.com/tokeninfo?access_token=${tokens}`
 	);
 
-	// const profileResponse = await axios.get(
-	// 	"https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=" +
-	// 		tokens
-	// );
-
-	// // console.log(profileResponse.data.picture); // This will log the URL of the profile picture
-
 	const googleUserInfo = response.data;
 
 	const email = googleUserInfo.email;
@@ -150,15 +157,33 @@ export const googleOauthHandler = async (req: Request, res: Response) => {
 
 	const tokenPayload = { userId: user._id, role: user.role };
 
-	attachCookiesToResponse(res, tokenPayload);
+	const token = createToken(tokenPayload);
 
-	res.json({ ...tokenPayload, message: "Login successful" });
+	res.json({ ...tokenPayload, token, message: "Login successful" });
 };
 
 export const getUserInfo = async (req: Request, res: Response) => {
 	const user = (req as CustomerRequestInterface).user;
 
-	const details = await User.findById(user.userId);
+	const details: any = await User.findById(user.userId);
+
+	if (!details) {
+		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
+	}
+
+	const employeeDetails = await Employee.findOne({ userId: user.userId });
+
+	const response = {
+		...details._doc,
+		employeeName: employeeDetails?.name,
+		employeePic: employeeDetails?.profilePicture,
+		employeePosition: employeeDetails?.position,
+		employeeId: employeeDetails?._id,
+	};
+
+	if (employeeDetails) {
+		return res.status(StatusCodes.OK).json({ response });
+	}
 
 	res.status(StatusCodes.OK).json({ details });
 };
@@ -198,7 +223,7 @@ export const singleUserVerification = async (req: Request, res: Response) => {
 	}
 
 	res.status(StatusCodes.OK).json({
-		message: "Email verified. Please login again",
+		message: "Email verified. Please change your password first",
 		userId: user._id,
 		role: user.role,
 	});
@@ -335,36 +360,35 @@ export const verifyPin = async (req: Request, res: Response) => {
 };
 
 export const resetPassword = async (req: Request, res: Response) => {
-	const { email, newPassword } = req.body;
+	const { id, password } = req.body;
 
-	if (!email || !newPassword) {
+	if (!id || !password) {
 		throw new customAPIErrors(
-			"Please provide email and new password",
+			"Please provide id and new password",
 			StatusCodes.BAD_REQUEST
 		);
 	}
 
-	const user = await User.findOne({ email });
+	const user = await User.findById(id);
 
 	if (!user) {
 		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
 	}
 
-	const EncryptedPassword = hashPassword(newPassword);
+	// Check if old password is same as new password
+	const isMatch = await comparePassword(password, user.password);
+	if (isMatch)
+		throw new customAPIErrors(
+			"Old password and new password cannot be same",
+			StatusCodes.BAD_REQUEST
+		);
 
-	const updateUser = await User.findOneAndUpdate(
-		{ email },
-		{
-			$set: {
-				password: EncryptedPassword,
-			},
-		},
-		{ new: true, runValidators: true }
-	);
+	const EncryptedPassword = hashPassword(password);
 
-	if (!updateUser) {
-		throw new customAPIErrors("User not found", StatusCodes.BAD_REQUEST);
-	}
+	user.password = EncryptedPassword;
+	user.isFirstTimePasswordChange = true;
+
+	await user.save();
 
 	res.status(StatusCodes.OK).json({ message: "Password changed successfully" });
 };
